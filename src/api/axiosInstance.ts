@@ -1,9 +1,10 @@
+"use client"
 import axios from 'axios';
-
+console.log('Backend URL:', process.env.NEXT_PUBLIC_BACKEND_URL);
 const axiosInstance = axios.create({  
-baseURL: '[https://api.example.com](https://api.example.com/)',  
+baseURL: process.env.NEXT_PUBLIC_BACKEND_URL, 
 headers: {  
-'Content-Type': 'multipart/form-data',  
+'Content-Type': 'video/mp4',  
 },  
 });
 
