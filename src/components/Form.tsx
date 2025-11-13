@@ -18,13 +18,7 @@ const MyForm: React.FC = () => {
       <input type="file" accept="video/*" onChange={handleFile} />
       {isPending && <p>Generating URL...</p>}
       {uploadMutation.isPending && <p>Uploading...</p>}
-      {uploadMutation.isSuccess && (
-        <video
-          src={uploadMutation.data}
-          controls
-          className="mt-4 w-full rounded-lg border"
-        />
-      )}
+     
     </div>
   );
 };
