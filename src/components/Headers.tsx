@@ -4,7 +4,7 @@ import { IoIosSearch } from "react-icons/io";
 import { IoIosAdd } from "react-icons/io";
 export default function Header() {
   return (
-    <div className="flex w-full flex flex-row justify-between items-center gap-2 p-4">
+    <div className="flex w-full flex flex-row justify-between items-center  p-4">
       <div className="flex flex-row items-center justify-center gap-8">
         <h1 className="font-proximaBold text-white text-lg">Pick Perfect</h1>
         <div className="bg-white rounded-lg flex flex-row items-center justify-center">
