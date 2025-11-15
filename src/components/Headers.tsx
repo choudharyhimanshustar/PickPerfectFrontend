@@ -1,10 +1,31 @@
+"use client";
+import React, { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { IoIosSearch } from "react-icons/io";
 import { IoIosAdd } from "react-icons/io";
+import { usePresignedUrl, useUploadVideo } from "@/api/hooks/useUpload";
 export default function Header() {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const { mutateAsync: getUrl, isPending } = usePresignedUrl();
+  const uploadMutation = useUploadVideo();
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    console.log("type of file.name:", typeof file.name);
+    const { url } = await getUrl(file.name);
+    console.log("Presigned URL:", url);
+    await uploadMutation.mutateAsync({ file, url });
+    // ✅ Proper JSX return
+  };
   return (
     <div className="flex w-full flex flex-row justify-between items-center  p-4">
+      <input
+        type="file"
+        className="hidden"
+        ref={fileRef}
+        onChange={handleFile} // ✅ file handler on input
+      />
       <div className="flex flex-row items-center justify-center gap-8">
         <h1 className="font-proximaBold text-white text-lg">Pick Perfect</h1>
         <div className="bg-white rounded-lg flex flex-row items-center justify-center">
@@ -22,7 +43,10 @@ export default function Header() {
           </Button>
         </div>
       </div>
-      <div className="bg-white border rounded-lg cursor-pointer flex flex-row items-center justify-center pl-2">
+      <div
+        className="bg-white border rounded-lg cursor-pointer flex flex-row items-center justify-center pl-2"
+        onClick={() => fileRef.current?.click()} // ✅ div only triggers file input
+      >
         <h6 className=" text-gray-500 border-white  ">Add</h6>
         <Button type="submit" className="  text-gray-500  cursor-pointer">
           <IoIosAdd />

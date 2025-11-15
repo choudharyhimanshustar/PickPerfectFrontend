@@ -1,8 +1,8 @@
 import "@/app/globals.css";
-import { Inter } from "next/font/google"
+import { Inter } from "next/font/google";
 import Header from "@/components/Headers";
-
-const inter = Inter({ subsets: ["latin"] })
+import ReactQueryProvider from "@/providers/ReactQueryProvider";
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: "My App",
@@ -19,8 +19,10 @@ export default function RootLayout({
       <body
         className={`${inter.className} bg-background text-foreground antialiased flex flex-col `}
       >
-        <Header />
-        <main>{children}</main>
+        <ReactQueryProvider>
+          <Header />
+          <main>{children}</main>
+        </ReactQueryProvider>
       </body>
     </html>
   );

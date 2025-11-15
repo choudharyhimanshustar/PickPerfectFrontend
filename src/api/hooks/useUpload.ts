@@ -1,5 +1,5 @@
 "use client";
-import { useMutation } from "@tanstack/react-query";
+import { useQuery,useMutation } from "@tanstack/react-query";
 import { getPresignedUrl,uploadToS3 } from "../endpoints/upload";
 
 

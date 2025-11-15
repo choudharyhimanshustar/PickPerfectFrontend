@@ -27,3 +27,4 @@ export const uploadToS3 = async ({
   // return clean file URL (without query params)
   return url.split("?")[0];
 };
+
