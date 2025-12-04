@@ -2,7 +2,7 @@
 import  axiosInstance  from "../axiosInstance";
 import axios from "axios";
 export const getPresignedUrl = async (fileName: string) => {
-  const { data } = await axiosInstance.get("/generate-presigned-url", {
+  const { data } = await axiosInstance.get("videos/generate-presigned-url", {
     params: { filename: fileName },
   });
   console.log("Presigned URL response data:", data);

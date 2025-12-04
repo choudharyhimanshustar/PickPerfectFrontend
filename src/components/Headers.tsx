@@ -16,6 +16,7 @@ export default function Header() {
     const { url } = await getUrl(file.name);
     console.log("Presigned URL:", url);
     await uploadMutation.mutateAsync({ file, url });
+    
     // ✅ Proper JSX return
   };
   return (
