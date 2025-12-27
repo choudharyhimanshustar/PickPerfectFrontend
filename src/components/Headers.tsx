@@ -5,10 +5,14 @@ import { Input } from "@/components/ui/input";
 import { IoIosSearch } from "react-icons/io";
 import { IoIosAdd } from "react-icons/io";
 import { usePresignedUrl, useUploadVideo } from "@/api/hooks/useUpload";
+import { usePathname } from "next/navigation";
+import { FaUser } from "react-icons/fa";
+
 export default function Header() {
   const fileRef = useRef<HTMLInputElement>(null);
   const { mutateAsync: getUrl, isPending } = usePresignedUrl();
   const uploadMutation = useUploadVideo();
+  const pathname = usePathname();
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -16,7 +20,6 @@ export default function Header() {
     const { url } = await getUrl(file.name);
     console.log("Presigned URL:", url);
     await uploadMutation.mutateAsync({ file, url });
-    
     // ✅ Proper JSX return
   };
   return (
@@ -29,30 +32,44 @@ export default function Header() {
       />
       <div className="flex flex-row items-center justify-center gap-8">
         <h1 className="font-proximaBold text-white text-lg">Pick Perfect</h1>
-        <div className="bg-white rounded-lg flex flex-row items-center justify-center">
-          <Input
-            type="email"
-            placeholder="Search"
-            className="border text-gray-500 border-white bg-white "
-          />
-          <Button
-            type="submit"
-            variant="outline"
-            className="border border-white bg-white text-gray-500  cursor-pointer"
-          >
-            <IoIosSearch />
+        {pathname !== "/" && (
+          <div className="bg-white rounded-lg flex flex-row items-center justify-center">
+            <Input
+              type="text"
+              placeholder="Search"
+              className="border text-gray-500 border-white bg-white "
+            />
+            <Button
+              type="submit"
+              variant="outline"
+              className="border border-white bg-white text-gray-500  cursor-pointer"
+            >
+              <IoIosSearch />
+            </Button>
+          </div>
+        )}
+      </div>
+      {pathname === "/" ? (
+        <div
+          className="bg-white border rounded-lg cursor-pointer flex flex-row items-center justify-center pl-2"
+          onClick={() => fileRef.current?.click()} // ✅ div only triggers file input
+        >
+          <h6 className=" text-gray-500 border-white  ">Sign In</h6>
+          <Button type="submit" className="  text-gray-500  cursor-pointer">
+            <FaUser />
           </Button>
         </div>
-      </div>
-      <div
-        className="bg-white border rounded-lg cursor-pointer flex flex-row items-center justify-center pl-2"
-        onClick={() => fileRef.current?.click()} // ✅ div only triggers file input
-      >
-        <h6 className=" text-gray-500 border-white  ">Add</h6>
-        <Button type="submit" className="  text-gray-500  cursor-pointer">
-          <IoIosAdd />
-        </Button>
-      </div>
+      ) : (
+        <div
+          className="bg-white border rounded-lg cursor-pointer flex flex-row items-center justify-center pl-2"
+          onClick={() => fileRef.current?.click()} // ✅ div only triggers file input
+        >
+          <h6 className=" text-gray-500 border-white  ">Add</h6>
+          <Button type="submit" className="  text-gray-500  cursor-pointer">
+            <IoIosAdd />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
