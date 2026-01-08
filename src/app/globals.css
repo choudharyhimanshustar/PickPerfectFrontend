@@ -32,5 +32,23 @@ body {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
   }
+
+  @keyframes scroll {
+  to {
+    transform: translateX(-50%);
+  }
+}
+  .animate-scroll {
+  animation-name: scroll;
+  animation-duration: var(--animation-duration, 40s);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-direction: var(--animation-direction, forwards);
+}
+
+.stroke {
+  -webkit-text-stroke: 14px white;
+  color: white;
+}
 }
 
