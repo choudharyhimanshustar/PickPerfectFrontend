@@ -6,7 +6,9 @@ import { IoIosSearch } from "react-icons/io";
 import { IoIosAdd } from "react-icons/io";
 import { usePresignedUrl, useUploadVideo } from "@/api/hooks/useUpload";
 import { usePathname } from "next/navigation";
+import { Dialog, DialogContent,DialogOverlay, DialogTrigger } from "@/components/ui/dialog";
 import { FaUser } from "react-icons/fa";
+import AuthCard from "@/components/ui/AuthCard";
 
 export default function Header() {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -50,15 +52,29 @@ export default function Header() {
         )}
       </div>
       {pathname === "/" ? (
-        <div
-          className="bg-white border rounded-lg cursor-pointer flex flex-row items-center justify-center pl-2"
-          onClick={() => fileRef.current?.click()} // ✅ div only triggers file input
-        >
-          <h6 className=" text-gray-500 border-white  ">Sign In</h6>
-          <Button type="submit" className="  text-gray-500  cursor-pointer">
-            <FaUser />
-          </Button>
-        </div>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="flex gap-2 text-white cursor-pointer">
+              <FaUser className="h-4 w-4" />
+              Sign In
+            </Button>
+          </DialogTrigger>
+
+          {/* MODAL CONTENT */}
+          <DialogContent
+            className="
+          bg-transparent 
+          border-none 
+          shadow-none 
+          p-0 
+          flex 
+          items-center 
+          justify-center
+        "
+          >
+            <AuthCard />
+          </DialogContent>
+        </Dialog>
       ) : (
         <div
           className="bg-white border rounded-lg cursor-pointer flex flex-row items-center justify-center pl-2"
