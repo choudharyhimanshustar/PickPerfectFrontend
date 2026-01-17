@@ -8,12 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { FaUser } from "react-icons/fa";
 import { useSignup, useLogin } from "../../api/hooks/useAuth";
+import { useRouter } from "next/navigation";
 
 export default function AuthCard() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
+  const router = useRouter();
   const signupMutation = useSignup();
   const loginMutation = useLogin();
   const loading = signupMutation.isPending || loginMutation.isPending;
@@ -31,6 +32,7 @@ export default function AuthCard() {
 
       // optional: auto login after signup
       const res = await loginMutation.mutateAsync({ email, password });
+      router.push("/videos");
       // localStorage.setItem("access_token", res.access_token);
     } catch (err) {
       console.error(err);
