@@ -7,6 +7,7 @@ export const AuthService = {
 
   login(data: { email: string; password: string }) {
     return axiosInstance.post("/auth/login", data);
+    
   },
 
   me() {

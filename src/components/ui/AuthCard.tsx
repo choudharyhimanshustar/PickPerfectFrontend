@@ -78,7 +78,7 @@ export default function AuthCard() {
 
                 <Button
                   type="submit"
-                  className="w-full flex items-center gap-2"
+                  className="w-full flex items-center gap-2 cursor-pointer"
                   disabled={loading}
                 >
                   <FaUser className="h-4 w-4" />
@@ -122,7 +122,7 @@ export default function AuthCard() {
 
                 <Button
                   type="submit"
-                  className="w-full flex items-center gap-2"
+                  className="w-full flex items-center gap-2 cursor-pointer"
                   disabled={loading}
                 >
                   <FaUser className="h-4 w-4" />
