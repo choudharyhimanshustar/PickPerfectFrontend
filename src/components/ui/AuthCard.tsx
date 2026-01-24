@@ -33,7 +33,16 @@ export default function AuthCard() {
       // optional: auto login after signup
       const res = await loginMutation.mutateAsync({ email, password });
       router.push("/videos");
-      // localStorage.setItem("access_token", res.access_token);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await loginMutation.mutateAsync({ email, password });
+      router.push("/videos");
     } catch (err) {
       console.error(err);
     }
@@ -61,15 +70,26 @@ export default function AuthCard() {
 
             {/* ---------- SIGN IN ---------- */}
             <TabsContent value="signin">
-              <form className="space-y-4 mt-4">
+              <form className="space-y-4 mt-4" onSubmit={handleLogin}>
                 <div className="space-y-1">
                   <Label>Email</Label>
-                  <Input type="email" placeholder="you@example.com" required />
+                  <Input
+                    type="email"
+                    value={email}
+                    placeholder="you@example.com"
+                    required
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </div>
 
                 <div className="space-y-1">
                   <Label>Password</Label>
-                  <Input type="password" required />
+                  <Input
+                    type="password"
+                    value={password}
+                    required
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
                   <p className="mt-6 text-center text-sm text-muted-foreground">
                     Don’t just choose. Choose right.
                   </p>
