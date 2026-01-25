@@ -5,16 +5,27 @@ import { Input } from "@/components/ui/input";
 import { IoIosSearch } from "react-icons/io";
 import { IoIosAdd } from "react-icons/io";
 import { usePresignedUrl, useUploadVideo } from "@/api/hooks/useUpload";
-import { usePathname } from "next/navigation";
-import { Dialog, DialogContent,DialogOverlay, DialogTrigger } from "@/components/ui/dialog";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogOverlay,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { FaUser } from "react-icons/fa";
 import AuthCard from "@/components/ui/AuthCard";
+import { useMe, useLogout } from "../api/hooks/useAuth";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Header() {
   const fileRef = useRef<HTMLInputElement>(null);
   const { mutateAsync: getUrl, isPending } = usePresignedUrl();
   const uploadMutation = useUploadVideo();
+  const { data, isLoading, isError } = useMe();
+  const logoutMutation = useLogout();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
+  const router = useRouter();
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -23,6 +34,17 @@ export default function Header() {
     console.log("Presigned URL:", url);
     await uploadMutation.mutateAsync({ file, url });
     // ✅ Proper JSX return
+  };
+  const handleLogout = async () => {
+    try {
+      await logoutMutation.mutateAsync();
+
+      // clear cached auth state
+      queryClient.removeQueries({ queryKey: ["auth"] });
+      router.push("/");
+    } catch (err) {
+      console.error(err);
+    }
   };
   return (
     <div className="flex w-full flex flex-row justify-between items-center  p-4">
@@ -52,17 +74,31 @@ export default function Header() {
         )}
       </div>
       {pathname === "/" ? (
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="flex gap-2 text-white cursor-pointer">
-              <FaUser className="h-4 w-4" />
-              Sign In
-            </Button>
-          </DialogTrigger>
+        isLoading ? null : data?.authenticated ? (
+          /* ---------- LOGOUT ---------- */
+          <Button
+            variant="outline"
+            className="flex gap-2 text-white cursor-pointer"
+            onClick={handleLogout}
+          >
+            <FaUser className="h-4 w-4" />
+            Logout
+          </Button>
+        ) : (
+          /* ---------- SIGN IN ---------- */
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="flex gap-2 text-white cursor-pointer"
+              >
+                <FaUser className="h-4 w-4" />
+                Sign In
+              </Button>
+            </DialogTrigger>
 
-          {/* MODAL CONTENT */}
-          <DialogContent
-            className="
+            <DialogContent
+              className="
           bg-transparent 
           border-none 
           shadow-none 
@@ -71,17 +107,19 @@ export default function Header() {
           items-center 
           justify-center
         "
-          >
-            <AuthCard />
-          </DialogContent>
-        </Dialog>
+            >
+              <AuthCard />
+            </DialogContent>
+          </Dialog>
+        )
       ) : (
+        /* ---------- ADD BUTTON ---------- */
         <div
           className="bg-white border rounded-lg cursor-pointer flex flex-row items-center justify-center pl-2"
-          onClick={() => fileRef.current?.click()} // ✅ div only triggers file input
+          onClick={() => fileRef.current?.click()}
         >
-          <h6 className=" text-gray-500 border-white  ">Add</h6>
-          <Button type="submit" className="  text-gray-500  cursor-pointer">
+          <h6 className="text-gray-500">Add</h6>
+          <Button type="submit" className="text-gray-500 cursor-pointer">
             <IoIosAdd />
           </Button>
         </div>

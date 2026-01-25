@@ -2,15 +2,19 @@ import axiosInstance from "../axiosInstance";
 
 export const AuthService = {
   signup(data: { email: string; password: string }) {
-    return axiosInstance.post("/auth/signup", data);
+    return axiosInstance.post("/api/auth/signup", data);
   },
 
   login(data: { email: string; password: string }) {
-    return axiosInstance.post("/auth/login", data);
-    
+    return axiosInstance.post("/api/auth/login", data);
   },
 
-  me() {
-    return axiosInstance.get("/auth/me");
+  async me() {
+    const res = await axiosInstance.get("/api/auth/me");
+    return res.data;
+  },
+  
+  logout() {
+    return axiosInstance.post("/api/auth/logout");
   },
 };
