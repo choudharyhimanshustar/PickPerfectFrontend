@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { FaUser } from "react-icons/fa";
 import { useSignup, useLogin } from "../../api/hooks/useAuth";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+
 
 export default function AuthCard() {
   const [email, setEmail] = useState("");
@@ -18,6 +20,7 @@ export default function AuthCard() {
   const signupMutation = useSignup();
   const loginMutation = useLogin();
   const loading = signupMutation.isPending || loginMutation.isPending;
+  const queryClient = useQueryClient();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +45,8 @@ export default function AuthCard() {
     e.preventDefault();
     try {
       const res = await loginMutation.mutateAsync({ email, password });
+      queryClient.setQueryData(["me"], { authenticated: true });
+      queryClient.invalidateQueries({ queryKey: ["me"] });
       router.push("/videos");
     } catch (err) {
       console.error(err);
