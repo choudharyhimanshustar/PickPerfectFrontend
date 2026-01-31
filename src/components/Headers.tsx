@@ -16,6 +16,7 @@ import { FaUser } from "react-icons/fa";
 import AuthCard from "@/components/ui/AuthCard";
 import { useMe, useLogout } from "../api/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function Header() {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -26,6 +27,8 @@ export default function Header() {
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const router = useRouter();
+  const { toast } = useToast();
+
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -39,11 +42,21 @@ export default function Header() {
     try {
       await logoutMutation.mutateAsync();
 
-      // clear cached auth state
-      queryClient.removeQueries({ queryKey: ["auth"] });
-      router.push("/");
+      queryClient.setQueryData(["me"], { authenticated: false });
+      queryClient.invalidateQueries({ queryKey: ["me"] });
+
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+      // router.push("/");
     } catch (err) {
-      console.error(err);
+      console.log(err);
+      toast({
+        title: "Logout failed",
+        description: "Please try again.",
+        variant: "destructive",
+      });
     }
   };
   return (
@@ -55,7 +68,12 @@ export default function Header() {
         onChange={handleFile} // ✅ file handler on input
       />
       <div className="flex flex-row items-center justify-center gap-8">
-        <h1 className="font-proximaBold text-white text-lg">Pick Perfect</h1>
+        <h1
+          className="font-proximaBold text-white text-lg cursor-pointer"
+          onClick={(e) => router.push("/")}
+        >
+          Pick Perfect
+        </h1>
         {pathname !== "/" && (
           <div className="bg-white rounded-lg flex flex-row items-center justify-center">
             <Input

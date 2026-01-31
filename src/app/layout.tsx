@@ -2,6 +2,7 @@ import "@/app/globals.css";
 import { Inter } from "next/font/google";
 import Header from "@/components/Headers";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
+import { Toaster } from "@/components/ui/toaster";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
@@ -19,6 +20,7 @@ export default function RootLayout({
       <body
         className={`${inter.className} bg-background text-foreground antialiased flex flex-col `}
       >
+        <Toaster />
         <ReactQueryProvider>
           <Header />
           <main>{children}</main>
