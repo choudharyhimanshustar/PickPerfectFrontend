@@ -1,6 +1,7 @@
 "use client";
-import React, { useState,useEffect } from "react";
-
+import React, { useState, useEffect } from "react";
+import AuthCard from "@/components/ui/AuthCard";
+import { useMe } from "@/api/hooks/useAuth";
 import { useAllVideos } from "@/api/hooks/getVideos";
 import { FaPlay } from "react-icons/fa6";
 
@@ -8,23 +9,38 @@ export default function Home() {
   const { data, isLoading, isError } = useAllVideos();
   const [isOpen, setIsOpen] = useState(false);
   const [videoUrl, setVideoUrl] = useState("");
+  const [showAuth, setShowAuth] = useState(false);
+  const { data: meData, isLoading: meIsLoading } = useMe();
 
   useEffect(() => {
-  const handleEsc = (e:KeyboardEvent) => {
-    if (e.key === "Escape") {
-      handleVideoPlay({ open: false, url: "" });
+    if (!meIsLoading && !meData?.authenticated) {
+      setShowAuth(true);
+    } else {
+      setShowAuth(false);
     }
-  };
+  }, [meData, meIsLoading]);
 
-  window.addEventListener("keydown", handleEsc);
-  return () => window.removeEventListener("keydown", handleEsc);
-}, []);
-  const handleVideoPlay=({ open, url }: { open: boolean; url: string }) => {
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        handleVideoPlay({ open: false, url: "" });
+      }
+    };
+
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
+  const handleVideoPlay = ({ open, url }: { open: boolean; url: string }) => {
     setVideoUrl(url);
     setIsOpen(open);
   };
   return (
     <div className="font-sans items-center min-h-screen p-4 space-y-6">
+      {showAuth && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md">
+          <AuthCard />
+        </div>
+      )}
       <div className="flex flex-row space-x-4">
         {data?.map((video: any) => (
           <div>
@@ -37,7 +53,7 @@ export default function Home() {
                 className="rounded-lg w-[25rem] aspect-video bg-black"
               />
               <button
-                onClick={() => handleVideoPlay({open:true, url:video.url})}
+                onClick={() => handleVideoPlay({ open: true, url: video.url })}
                 className="relative -top-[8rem] right-[-40%] w-fit cursor-pointer"
               >
                 <FaPlay className="text-red-500 text-6xl opacity-75 hover:opacity-100" />
@@ -49,7 +65,7 @@ export default function Home() {
             {isOpen && (
               <div
                 className="fixed inset-0 bg-white w-[99%] h-screen p-4 bg-opacity-75 flex items-center justify-center z-50 rounded-lg mx-auto"
-                onClick={() => handleVideoPlay({open:false, url:""})}
+                onClick={() => handleVideoPlay({ open: false, url: "" })}
               >
                 <video
                   src={videoUrl}
