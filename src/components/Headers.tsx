@@ -17,8 +17,14 @@ import AuthCard from "@/components/ui/AuthCard";
 import { useMe, useLogout } from "../api/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
+import UserMenu from "./ui/UserMenu";
+import { FileUpload } from "@/components/ui/file-upload";
 
 export default function Header() {
+  const [openUploadDialog, setOpenUploadDialog] = React.useState(false);
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+  const [title, setTitle] = React.useState("");
+  const [description, setDescription] = React.useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const { mutateAsync: getUrl, isPending } = usePresignedUrl();
   const uploadMutation = useUploadVideo();
@@ -32,12 +38,38 @@ export default function Header() {
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    console.log("type of file.name:", typeof file.name);
-    const { url } = await getUrl(file.name);
-    console.log("Presigned URL:", url);
-    await uploadMutation.mutateAsync({ file, url });
-    // ✅ Proper JSX return
+
+    setSelectedFile(file);
+    setTitle(file.name.replace(/\.[^/.]+$/, ""));
+    setOpenUploadDialog(true);
   };
+
+  const handleUploadSubmit = async () => {
+    if (!selectedFile) {
+      toast({
+        title: "No video selected",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { url } = await getUrl(selectedFile.name);
+
+    await uploadMutation.mutateAsync({
+      file: selectedFile,
+      url,
+      metadata: {
+        title,
+        description,
+      },
+    });
+
+    setOpenUploadDialog(false);
+    setSelectedFile(null);
+    setTitle("");
+    setDescription("");
+  };
+
   const handleLogout = async () => {
     try {
       await logoutMutation.mutateAsync();
@@ -93,15 +125,7 @@ export default function Header() {
       </div>
       {pathname === "/" ? (
         isLoading ? null : data?.authenticated ? (
-          /* ---------- LOGOUT ---------- */
-          <Button
-            variant="outline"
-            className="flex gap-2 text-white cursor-pointer"
-            onClick={handleLogout}
-          >
-            <FaUser className="h-4 w-4" />
-            Logout
-          </Button>
+          <UserMenu name={"User"} imageUrl={""} onLogout={handleLogout} />
         ) : (
           /* ---------- SIGN IN ---------- */
           <Dialog>
@@ -134,14 +158,93 @@ export default function Header() {
         /* ---------- ADD BUTTON ---------- */
         <div
           className="bg-white border rounded-lg cursor-pointer flex flex-row items-center justify-center pl-2"
-          onClick={() => fileRef.current?.click()}
+          onClick={() => setOpenUploadDialog(true)}
         >
           <h6 className="text-gray-500">Add</h6>
-          <Button type="submit" className="text-gray-500 cursor-pointer">
+          <Button className="text-gray-500">
             <IoIosAdd />
           </Button>
         </div>
       )}
+      <Dialog open={openUploadDialog} onOpenChange={setOpenUploadDialog}>
+        <DialogContent className="bg-white text-black max-w-4xl rounded-2xl p-8">
+          <div className="space-y-6">
+            <h2 className="text-2xl font-semibold">Upload Video</h2>
+
+            <div className="grid grid-cols-2 gap-8 items-stretch">
+              {/* LEFT SIDE — METADATA */}
+              <div className="space-y-5">
+                <div>
+                  <label className="text-sm font-medium">Title</label>
+                  <Input
+                    placeholder="Enter video title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Description</label>
+                  <textarea
+                    className="w-full h-[14.5rem] rounded-lg border p-3 resize-none"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                  />
+                </div>
+
+                <Button
+                  variant="outline"
+                  onClick={handleUploadSubmit}
+                  className="rounded-2xl w-[50%] cursor-pointer"
+                >
+                  Upload Video
+                </Button>
+              </div>
+
+              {/* RIGHT SIDE — FILE UPLOAD */}
+              <div className="flex flex-col h-full space-y-4">
+  <label className="text-sm font-medium">Video</label>
+
+  <div className="flex-1 rounded-xl border border-dashed p-4 bg-gray-50">
+    {!selectedFile ? (
+      <div className="h-full flex items-center justify-center">
+        <FileUpload
+          onChange={(files: File[]) => {
+            if (!files.length) return;
+            const file = files[0];
+            setSelectedFile(file);
+
+            if (!title) {
+              setTitle(file.name.replace(/\.[^/.]+$/, ""));
+            }
+          }}
+        />
+      </div>
+    ) : (
+      <div className="relative w-full h-full">
+        <video
+          src={URL.createObjectURL(selectedFile)}
+          controls
+          className="w-full h-full object-contain rounded-lg"
+        />
+
+        <Button
+          size="sm"
+          variant="secondary"
+          className="absolute top-2 right-2"
+          onClick={() => setSelectedFile(null)}
+        >
+          Change
+        </Button>
+      </div>
+    )}
+  </div>
+</div>
+
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

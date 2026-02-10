@@ -6,6 +6,10 @@ import { getPresignedUrl,uploadToS3 } from "../endpoints/upload";
 interface UploadParams {
   file: File;
   url: string;
+  metadata?: {
+    title: string;
+    description: string;
+  };
 }
 
 export const usePresignedUrl = () => {
