@@ -19,6 +19,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
 import UserMenu from "./ui/UserMenu";
 import { FileUpload } from "@/components/ui/file-upload";
+import { LoaderOne } from "@/components/ui/loader";
 
 export default function Header() {
   const [openUploadDialog, setOpenUploadDialog] = React.useState(false);
@@ -28,6 +29,7 @@ export default function Header() {
   const fileRef = useRef<HTMLInputElement>(null);
   const { mutateAsync: getUrl, isPending } = usePresignedUrl();
   const uploadMutation = useUploadVideo();
+  const isUploading = isPending || uploadMutation.isPending;
   const { data, isLoading, isError } = useMe();
   const logoutMutation = useLogout();
   const pathname = usePathname();
@@ -167,7 +169,12 @@ export default function Header() {
         </div>
       )}
       <Dialog open={openUploadDialog} onOpenChange={setOpenUploadDialog}>
-        <DialogContent className="bg-white text-black max-w-4xl rounded-2xl p-8">
+        <DialogContent className="absolute bg-white text-black max-w-4xl rounded-2xl p-8">
+          {isUploading && (
+            <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-2xl">
+              <LoaderOne />
+            </div>
+          )}
           <div className="space-y-6">
             <h2 className="text-2xl font-semibold">Upload Video</h2>
 
@@ -203,44 +210,43 @@ export default function Header() {
 
               {/* RIGHT SIDE — FILE UPLOAD */}
               <div className="flex flex-col h-full space-y-4">
-  <label className="text-sm font-medium">Video</label>
+                <label className="text-sm font-medium">Video</label>
 
-  <div className="flex-1 rounded-xl border border-dashed p-4 bg-gray-50">
-    {!selectedFile ? (
-      <div className="h-full flex items-center justify-center">
-        <FileUpload
-          onChange={(files: File[]) => {
-            if (!files.length) return;
-            const file = files[0];
-            setSelectedFile(file);
+                <div className="flex-1 rounded-xl border border-dashed p-4 bg-gray-50">
+                  {!selectedFile ? (
+                    <div className="h-full flex items-center justify-center">
+                      <FileUpload
+                        onChange={(files: File[]) => {
+                          if (!files.length) return;
+                          const file = files[0];
+                          setSelectedFile(file);
 
-            if (!title) {
-              setTitle(file.name.replace(/\.[^/.]+$/, ""));
-            }
-          }}
-        />
-      </div>
-    ) : (
-      <div className="relative w-full h-full">
-        <video
-          src={URL.createObjectURL(selectedFile)}
-          controls
-          className="w-full h-full object-contain rounded-lg"
-        />
+                          if (!title) {
+                            setTitle(file.name.replace(/\.[^/.]+$/, ""));
+                          }
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="relative w-full h-full">
+                      <video
+                        src={URL.createObjectURL(selectedFile)}
+                        controls
+                        className="w-full h-full object-contain rounded-lg"
+                      />
 
-        <Button
-          size="sm"
-          variant="secondary"
-          className="absolute top-2 right-2"
-          onClick={() => setSelectedFile(null)}
-        >
-          Change
-        </Button>
-      </div>
-    )}
-  </div>
-</div>
-
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="absolute top-2 right-2"
+                        onClick={() => setSelectedFile(null)}
+                      >
+                        Change
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </DialogContent>
