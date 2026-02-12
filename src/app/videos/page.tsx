@@ -7,6 +7,7 @@ import { FaPlay } from "react-icons/fa6";
 
 export default function Home() {
   const { data, isLoading, isError } = useAllVideos();
+  console.log("VIDEOS LIST RENDERED", data);
   const [isOpen, setIsOpen] = useState(false);
   const [videoUrl, setVideoUrl] = useState("");
   const [showAuth, setShowAuth] = useState(false);

@@ -56,7 +56,6 @@ export default function Header() {
     }
 
     const { url } = await getUrl(selectedFile.name);
-
     await uploadMutation.mutateAsync({
       file: selectedFile,
       url,
