@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { FaUser } from "react-icons/fa";
 import { useSignup, useLogin } from "../../api/hooks/useAuth";
+import { resetRefreshState } from "../../api/axiosInstance";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -45,6 +46,7 @@ export default function AuthCard() {
     e.preventDefault();
     try {
       const res = await loginMutation.mutateAsync({ email, password });
+      resetRefreshState();
       queryClient.setQueryData(["me"], { authenticated: true });
       queryClient.invalidateQueries({ queryKey: ["me"] });
       router.push("/videos");

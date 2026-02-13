@@ -36,49 +36,50 @@ export default function Home() {
     setIsOpen(open);
   };
   return (
-    <div className="font-sans items-center min-h-screen p-4 space-y-6">
+    <div className="font-sans min-h-screen p-4 space-y-6 w-full">
       {showAuth && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md">
           <AuthCard />
         </div>
       )}
-      <div className="flex flex-row space-x-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full">
         {data?.map((video: any) => (
-          <div>
-            <div
-              key={video.key}
-              className="flex flex-col bg-[#E3E4DF] rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow duration-200 w-fit"
-            >
+          <div
+            key={video.video_id}
+            className="flex flex-col bg-[#E3E4DF] rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow duration-200 w-full"
+          >
+            <div className="relative w-full">
               <video
                 src={video.url}
-                className="rounded-lg w-[25rem] aspect-video bg-black"
+                className="rounded-lg w-full aspect-video bg-black"
               />
               <button
+                type="button"
                 onClick={() => handleVideoPlay({ open: true, url: video.url })}
-                className="relative -top-[8rem] right-[-40%] w-fit cursor-pointer"
+                className="absolute inset-0 flex items-center justify-center pointer-events-auto"
               >
-                <FaPlay className="text-red-500 text-6xl opacity-75 hover:opacity-100" />
+                <FaPlay className="text-red-500 text-4xl opacity-75 hover:opacity-100" />
               </button>
-              <span className="text-sm mt-3 font-medium text-gray-700 truncate w-fit">
-                {video.key}
-              </span>
             </div>
-            {isOpen && (
-              <div
-                className="fixed inset-0 bg-white w-[99%] h-screen p-4 bg-opacity-75 flex items-center justify-center z-50 rounded-lg mx-auto"
-                onClick={() => handleVideoPlay({ open: false, url: "" })}
-              >
-                <video
-                  src={videoUrl}
-                  className="rounded-lg w-[80%] h-[80%] bg-black"
-                  controls
-                  autoPlay
-                />
-              </div>
-            )}
+            <span className="text-sm mt-3 font-medium text-gray-700 truncate w-full">
+              {video.filename}
+            </span>
           </div>
         ))}
       </div>
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-white w-[99%] h-screen p-4 bg-opacity-75 flex items-center justify-center z-50 rounded-lg mx-auto"
+          onClick={() => handleVideoPlay({ open: false, url: "" })}
+        >
+          <video
+            src={videoUrl}
+            className="rounded-lg w-[80%] h-[80%] bg-black"
+            controls
+            autoPlay
+          />
+        </div>
+      )}
     </div>
   );
 }
