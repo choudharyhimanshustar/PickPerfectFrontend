@@ -53,53 +53,53 @@ export default function VideoDetailPage() {
         <span className="text-sm">Back to videos</span>
       </button>
 
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left: Video Player */}
-        <div>
-          <div className="rounded-2xl overflow-hidden bg-zinc-900 border border-white/5">
-            {video?.url ? (
-              <video
-                src={video.url}
-                className="w-full aspect-video bg-black"
-                controls
-                autoPlay
-              />
-            ) : (
-              <div className="w-full aspect-video bg-black flex items-center justify-center">
-                <span className="text-zinc-500">Loading video...</span>
-              </div>
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Top Row: Video + Performance Score */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left: Video Player */}
+          <div>
+            <div className="rounded-2xl overflow-hidden bg-zinc-900 border border-white/5">
+              {video?.url ? (
+                <video
+                  src={video.url}
+                  className="w-full aspect-video bg-black"
+                  controls
+                  autoPlay
+                />
+              ) : (
+                <div className="w-full aspect-video bg-black flex items-center justify-center">
+                  <span className="text-zinc-500">Loading video...</span>
+                </div>
+              )}
+            </div>
+            <h1 className="mt-4 text-lg font-semibold truncate">
+              {video?.filename || analysis?.original_filename || "Video"}
+            </h1>
+            {analysis?.analyzed_at && (
+              <p className="text-sm text-zinc-500 mt-1">
+                Analyzed {new Date(analysis.analyzed_at).toLocaleDateString()}
+              </p>
             )}
           </div>
-          <h1 className="mt-4 text-lg font-semibold truncate">
-            {video?.filename || analysis?.original_filename || "Video"}
-          </h1>
-          {analysis?.analyzed_at && (
-            <p className="text-sm text-zinc-500 mt-1">
-              Analyzed {new Date(analysis.analyzed_at).toLocaleDateString()}
-            </p>
-          )}
-        </div>
 
-        {/* Right: Analysis Results */}
-        <div className="space-y-6">
-          {isLoading && (
-            <div className="rounded-2xl p-8 bg-zinc-900 border border-white/5 flex items-center justify-center min-h-[300px]">
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-                <span className="text-zinc-400 text-sm">Analyzing performance...</span>
+          {/* Right: Performance Score + Loading/Error states */}
+          <div className="space-y-6">
+            {isLoading && (
+              <div className="rounded-2xl p-8 bg-zinc-900 border border-white/5 flex items-center justify-center min-h-[300px]">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-zinc-400 text-sm">Analyzing performance...</span>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {isError && (
-            <div className="rounded-2xl p-8 bg-zinc-900 border border-red-500/20">
-              <p className="text-red-400 text-sm">Failed to load analysis. The video may still be processing.</p>
-            </div>
-          )}
+            {isError && (
+              <div className="rounded-2xl p-8 bg-zinc-900 border border-red-500/20">
+                <p className="text-red-400 text-sm">Failed to load analysis. The video may still be processing.</p>
+              </div>
+            )}
 
-          {analysis?.status === "processed" && analysis.analysis && (
-            <>
-              {/* Performance Score Card */}
+            {analysis?.status === "processed" && analysis.analysis && (
               <div className="rounded-2xl p-6 bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/5 shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
                 <div className="flex items-center gap-2 mb-5">
                   <PiRankingDuotone className="text-xl text-emerald-400" />
@@ -162,107 +162,112 @@ export default function VideoDetailPage() {
                   </p>
                 </div>
               </div>
+            )}
 
-              {/* Chord Analysis Card */}
-              <div className="rounded-2xl p-6 bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/5">
-                <div className="flex items-center gap-2 mb-5">
-                  <PiGuitar className="text-xl text-emerald-400" />
-                  <h3 className="text-lg font-semibold">Chord Detection</h3>
-                </div>
-
-                <div className="mb-4">
-                  <p className="text-sm text-zinc-400">Top Detected Chord</p>
-                  <div className="flex items-baseline gap-3 mt-1">
-                    <span className="text-2xl font-bold">
-                      {analysis.analysis.chords.top_chord.chord}
-                    </span>
-                    <span className="text-sm text-emerald-400">
-                      {Math.round(analysis.analysis.chords.top_chord.confidence * 100)}% confidence
-                    </span>
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-sm text-zinc-400 mb-2">Alternatives</p>
-                  <div className="space-y-2">
-                    {analysis.analysis.chords.alternatives.slice(1).map(
-                      (alt: any, i: number) => (
-                        <div
-                          key={i}
-                          className="flex items-center justify-between text-sm"
-                        >
-                          <span className="text-zinc-300">{alt.chord}</span>
-                          <div className="flex items-center gap-2">
-                            <div className="w-24 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                              <div
-                                className="h-full rounded-full bg-zinc-500 transition-all duration-500"
-                                style={{ width: `${alt.confidence * 100}%` }}
-                              />
-                            </div>
-                            <span className="text-zinc-500 w-10 text-right">
-                              {Math.round(alt.confidence * 100)}%
-                            </span>
-                          </div>
-                        </div>
-                      )
-                    )}
-                  </div>
+            {analysis && analysis.status !== "processed" && (
+              <div className="rounded-2xl p-8 bg-zinc-900 border border-white/5 flex items-center justify-center min-h-[300px]">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-zinc-400 text-sm">
+                    Video is still being processed...
+                  </span>
                 </div>
               </div>
+            )}
+          </div>
+        </div>
 
-              {/* Rhythm Analysis Card */}
-              <div className="rounded-2xl p-6 bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/5">
-                <div className="flex items-center gap-2 mb-5">
-                  <GoPulse className="text-xl text-emerald-400" />
-                  <h3 className="text-lg font-semibold">Rhythm & Timing</h3>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 rounded-lg bg-black/30">
-                    <p className="text-xs text-zinc-500 uppercase tracking-wide">Tempo</p>
-                    <p className="text-xl font-bold mt-1">
-                      {analysis.analysis.rhythm.tempo_bpm}
-                      <span className="text-sm text-zinc-500 ml-1">BPM</span>
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-black/30">
-                    <p className="text-xs text-zinc-500 uppercase tracking-wide">Strums/sec</p>
-                    <p className="text-xl font-bold mt-1">
-                      {analysis.analysis.rhythm.strums_per_second}
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-black/30">
-                    <p className="text-xs text-zinc-500 uppercase tracking-wide">Rhythm Score</p>
-                    <p className="text-xl font-bold mt-1">
-                      {Math.round(analysis.analysis.rhythm.rhythm_score * 100)}%
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-black/30">
-                    <p className="text-xs text-zinc-500 uppercase tracking-wide">Quality</p>
-                    <p className="mt-1">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium text-black capitalize ${getRhythmColor(analysis.analysis.rhythm.rhythm_quality)}`}
-                      >
-                        {analysis.analysis.rhythm.rhythm_quality}
-                      </span>
-                    </p>
-                  </div>
-                </div>
+        {/* Bottom Row: Rhythm & Timing + Chord Detection */}
+        {analysis?.status === "processed" && analysis.analysis && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Rhythm Analysis Card */}
+            <div className="rounded-2xl p-6 bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/5">
+              <div className="flex items-center gap-2 mb-5">
+                <GoPulse className="text-xl text-emerald-400" />
+                <h3 className="text-lg font-semibold">Rhythm & Timing</h3>
               </div>
-            </>
-          )}
 
-          {analysis && analysis.status !== "processed" && (
-            <div className="rounded-2xl p-8 bg-zinc-900 border border-white/5 flex items-center justify-center min-h-[300px]">
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-                <span className="text-zinc-400 text-sm">
-                  Video is still being processed...
-                </span>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 rounded-lg bg-black/30">
+                  <p className="text-xs text-zinc-500 uppercase tracking-wide">Tempo</p>
+                  <p className="text-xl font-bold mt-1">
+                    {analysis.analysis.rhythm.tempo_bpm}
+                    <span className="text-sm text-zinc-500 ml-1">BPM</span>
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-black/30">
+                  <p className="text-xs text-zinc-500 uppercase tracking-wide">Strums/sec</p>
+                  <p className="text-xl font-bold mt-1">
+                    {analysis.analysis.rhythm.strums_per_second}
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-black/30">
+                  <p className="text-xs text-zinc-500 uppercase tracking-wide">Rhythm Score</p>
+                  <p className="text-xl font-bold mt-1">
+                    {Math.round(analysis.analysis.rhythm.rhythm_score * 100)}%
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-black/30">
+                  <p className="text-xs text-zinc-500 uppercase tracking-wide">Quality</p>
+                  <p className="mt-1">
+                    <span
+                      className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium text-black capitalize ${getRhythmColor(analysis.analysis.rhythm.rhythm_quality)}`}
+                    >
+                      {analysis.analysis.rhythm.rhythm_quality}
+                    </span>
+                  </p>
+                </div>
               </div>
             </div>
-          )}
-        </div>
+
+            {/* Chord Analysis Card */}
+            <div className="rounded-2xl p-6 bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/5">
+              <div className="flex items-center gap-2 mb-5">
+                <PiGuitar className="text-xl text-emerald-400" />
+                <h3 className="text-lg font-semibold">Chord Detection</h3>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-sm text-zinc-400">Top Detected Chord</p>
+                <div className="flex items-baseline gap-3 mt-1">
+                  <span className="text-2xl font-bold">
+                    {analysis.analysis.chords.top_chord.chord}
+                  </span>
+                  <span className="text-sm text-emerald-400">
+                    {Math.round(analysis.analysis.chords.top_chord.confidence * 100)}% confidence
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm text-zinc-400 mb-2">Alternatives</p>
+                <div className="space-y-2">
+                  {analysis.analysis.chords.alternatives.slice(1).map(
+                    (alt: any, i: number) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <span className="text-zinc-300">{alt.chord}</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-zinc-500 transition-all duration-500"
+                              style={{ width: `${alt.confidence * 100}%` }}
+                            />
+                          </div>
+                          <span className="text-zinc-500 w-10 text-right">
+                            {Math.round(alt.confidence * 100)}%
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
