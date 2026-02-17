@@ -9,3 +9,11 @@ export const useAllVideos = () => {
     refetchOnMount: "always",
   });
 };
+
+export const useVideoAnalysis = (videoId: string) => {
+  return useQuery({
+    queryKey: ["video-analysis", videoId],
+    queryFn: () => VideoService.getVideoAnalysis(videoId),
+    enabled: !!videoId,
+  });
+};

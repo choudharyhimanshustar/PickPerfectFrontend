@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import AuthCard from "@/components/ui/AuthCard";
 import { useMe } from "@/api/hooks/useAuth";
 import { useAllVideos } from "@/api/hooks/getVideos";
@@ -7,9 +8,7 @@ import { FaPlay } from "react-icons/fa6";
 
 export default function Home() {
   const { data, isLoading, isError } = useAllVideos();
-  console.log("VIDEOS LIST RENDERED", data);
-  const [isOpen, setIsOpen] = useState(false);
-  const [videoUrl, setVideoUrl] = useState("");
+  const router = useRouter();
   const [showAuth, setShowAuth] = useState(false);
   const { data: meData, isLoading: meIsLoading } = useMe();
 
@@ -21,20 +20,6 @@ export default function Home() {
     }
   }, [meData, meIsLoading]);
 
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        handleVideoPlay({ open: false, url: "" });
-      }
-    };
-
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
-  }, []);
-  const handleVideoPlay = ({ open, url }: { open: boolean; url: string }) => {
-    setVideoUrl(url);
-    setIsOpen(open);
-  };
   return (
     <div className="font-sans min-h-screen p-4 space-y-6 w-full">
       {showAuth && (
@@ -46,20 +31,17 @@ export default function Home() {
         {data?.map((video: any) => (
           <div
             key={video.video_id}
-            className="flex flex-col bg-[#E3E4DF] rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow duration-200 w-full"
+            onClick={() => router.push(`/videos/${video.video_id}`)}
+            className="flex flex-col bg-[#E3E4DF] rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow duration-200 w-full cursor-pointer"
           >
             <div className="relative w-full">
               <video
                 src={video.url}
                 className="rounded-lg w-full aspect-video bg-black"
               />
-              <button
-                type="button"
-                onClick={() => handleVideoPlay({ open: true, url: video.url })}
-                className="absolute inset-0 flex items-center justify-center pointer-events-auto"
-              >
-                <FaPlay className="text-red-500 text-4xl opacity-75 hover:opacity-100" />
-              </button>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <FaPlay className="text-red-500 text-4xl opacity-75" />
+              </div>
             </div>
             <span className="text-sm mt-3 font-medium text-gray-700 truncate w-full">
               {video.filename}
@@ -67,19 +49,6 @@ export default function Home() {
           </div>
         ))}
       </div>
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-white w-[99%] h-screen p-4 bg-opacity-75 flex items-center justify-center z-50 rounded-lg mx-auto"
-          onClick={() => handleVideoPlay({ open: false, url: "" })}
-        >
-          <video
-            src={videoUrl}
-            className="rounded-lg w-[80%] h-[80%] bg-black"
-            controls
-            autoPlay
-          />
-        </div>
-      )}
     </div>
   );
 }
