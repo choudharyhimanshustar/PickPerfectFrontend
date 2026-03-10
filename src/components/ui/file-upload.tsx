@@ -27,8 +27,10 @@ const secondaryVariant = {
 };
 
 export const FileUpload = ({
+  accept,
   onChange,
 }: {
+  accept?: string;
   onChange?: (files: File[]) => void;
 }) => {
   const [files, setFiles] = useState<File[]>([]);
@@ -53,11 +55,11 @@ export const FileUpload = ({
   });
 
   return (
-    <div className="w-full" {...getRootProps()}>
+    <div className="relative w-full h-full overflow-hidden" {...getRootProps()}>
       <motion.div
         onClick={handleClick}
         whileHover="animate"
-        className="group/file relative block w-full cursor-pointer overflow-hidden rounded-lg p-10"
+        className="group/file relative flex h-full w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg"
       >
         <input
           ref={fileInputRef}
@@ -70,10 +72,11 @@ export const FileUpload = ({
           <GridPattern />
         </div>
         <div className="flex flex-col items-center justify-center">
-          <p className="relative z-20 mt-2 font-sans text-sm font-medium text-[#262626]">
+          <p className="relative z-20 mt-2 font-sans text-sm font-medium text-[#262626] invisible">
             Drag or drop your files here or click to upload
           </p>
-          <div className="relative mx-auto mt-10 w-full max-w-xl">
+          <div className="relative flex h-full w-full items-center justify-center">
+            {" "}
             {files.length > 0 &&
               files.map((file, idx) => (
                 <motion.div
@@ -152,7 +155,6 @@ export const FileUpload = ({
                 )}
               </motion.div>
             )}
-
             {!files.length && (
               <motion.div
                 variants={secondaryVariant}
@@ -167,11 +169,11 @@ export const FileUpload = ({
 };
 
 export function GridPattern() {
-  const columns = 36;
-  const rows = 10;
+  const columns = 26;
+  const rows = 6;
 
   return (
-    <div className="flex shrink-0 scale-105 flex-wrap items-center justify-center gap-[2px] bg-gray-50 p-2 rounded-lg">
+    <div className="absolute inset-0 flex flex-wrap items-center justify-center gap-[2px] bg-gray-50 p-2">
       {Array.from({ length: rows }).map((_, row) =>
         Array.from({ length: columns }).map((_, col) => {
           const index = row * columns + col;
@@ -186,9 +188,8 @@ export function GridPattern() {
               }`}
             />
           );
-        })
+        }),
       )}
     </div>
   );
 }
-

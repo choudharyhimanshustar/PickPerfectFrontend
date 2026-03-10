@@ -1,6 +1,10 @@
 "use client";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { getPresignedUrl, uploadToS3 } from "../endpoints/upload";
+import {
+  getPresignedUrl,
+  uploadToS3,
+  videoUploadComplete,
+} from "../endpoints/upload";
 import { useQueryClient } from "@tanstack/react-query";
 import { VideoService } from "../endpoints/videos";
 
@@ -23,7 +27,6 @@ export const usePresignedUrl = () => {
   });
 };
 
-
 export const useUploadVideo = () => {
   const queryClient = useQueryClient();
 
@@ -32,21 +35,17 @@ export const useUploadVideo = () => {
       const fileUrl = await uploadToS3({ file, url });
       return fileUrl;
     },
-
-    onSuccess: async () => {
-      try {
-        // Manually fetch fresh video data
-        const newVideos = await VideoService.getAllVideos();
-
-        // Update the cache with fresh data
-        queryClient.setQueryData(["all-videos"], newVideos);
-      } catch (error) {
-        console.error("Failed to fetch updated videos:", error);
-      }
-    },
   });
 };
 
-
-  
-
+export const useVideoUploadComplete = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (videoId: string) => videoUploadComplete(videoId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["videos"],
+      });
+    },
+  });
+};

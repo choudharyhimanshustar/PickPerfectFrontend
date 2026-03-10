@@ -35,12 +35,15 @@ export default function Home() {
             className="flex flex-col bg-[#E3E4DF] rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow duration-200 w-full cursor-pointer"
           >
             <div className="relative w-full">
-              <video
-                src={video.url}
-                className="rounded-lg w-full aspect-video bg-black"
+              <img
+                src={video.thumbnail_url}
+                alt={video.filename}
+                className="rounded-lg w-full aspect-video object-cover bg-black"
               />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <FaPlay className="text-red-500 text-4xl opacity-75" />
+
+              <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg">
+                {" "}
+                <FaPlay className="text-red-500 text-4xl opacity-80" />
               </div>
             </div>
             <span className="text-sm mt-3 font-medium text-gray-700 truncate w-full">
