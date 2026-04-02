@@ -85,11 +85,6 @@ export default function Header() {
 
       await Promise.all(uploads);
 
-      // 🔥 call backend to generate thumbnail if none provided
-      if (!thumbnailFile) {
-        await triggerThumbnailGeneration(presigned.video.key);
-      }
-
       setOpenUploadDialog(false);
       setSelectedFile(null);
       setTitle("");
