@@ -214,10 +214,10 @@ export default function Header() {
         <DialogOverlay className="bg-black/50 backdrop-blur-none" />
         <DialogContent
           ref={dialogContentRef}
-          className={`relative bg-white text-black max-w-5xl w-[95vw] 
-  max-h-[90vh] rounded-2xl p-6 sm:p-10
+          className="relative bg-white text-black max-w-5xl w-[95vw] 
+  max-h-[90vh] rounded-2xl p-0
   z-[100] fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-  overflow-y-auto scrollbar-hide`}
+  overflow-hidden"
         >
           {isUploading ? (
             <div className="flex flex-col items-center justify-center h-64 gap-4">
@@ -227,7 +227,13 @@ export default function Header() {
               </p>
             </div>
           ) : (
-            <div ref={dialogRef} className="relative w-full h-full">
+            <div
+              className="relative w-full h-full max-h-[90vh] overflow-y-auto p-6 sm:p-10
+      [&::-webkit-scrollbar]:w-[6px]
+      [&::-webkit-scrollbar-track]:bg-transparent
+      [&::-webkit-scrollbar-thumb]:bg-gray-500
+      [&::-webkit-scrollbar-thumb]:rounded-full"
+            >
               {/* Header */}
               <div className="mb-8">
                 <h2 className="text-2xl font-semibold">Upload Video</h2>
