@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { IoIosSearch } from "react-icons/io";
@@ -26,11 +26,18 @@ import { FileUpload } from "@/components/ui/file-upload";
 import { LoaderOne } from "@/components/ui/loader";
 
 export default function Header() {
+  // usestate
   const [openUploadDialog, setOpenUploadDialog] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [dialogRect, setDialogRect] = useState<DOMRect | null>(null);
+  const [overlaySize, setOverlaySize] = useState<{
+    w: number;
+    h: number;
+  } | null>(null);
+
   const fileRef = useRef<HTMLInputElement>(null);
   const { mutateAsync: getUrl, isPending } = usePresignedUrl();
   const uploadMutation = useUploadVideo();
@@ -42,6 +49,21 @@ export default function Header() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { toast } = useToast();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const dialogContentRef = useRef<HTMLDivElement>(null);
+
+  // useeffect
+  useEffect(() => {
+    if (openUploadDialog) {
+      // Wait one frame for dialog to render
+      requestAnimationFrame(() => {
+        if (dialogContentRef.current) {
+          const r = dialogContentRef.current.getBoundingClientRect();
+          setOverlaySize({ w: r.width, h: r.height });
+        }
+      });
+    }
+  }, [openUploadDialog]);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -53,6 +75,10 @@ export default function Header() {
   };
 
   const handleUploadSubmit = async () => {
+    const el = dialogRef.current?.closest(
+      '[role="dialog"]',
+    ) as HTMLElement | null;
+    if (el) setDialogRect(el.getBoundingClientRect());
     if (!selectedFile) {
       toast({
         title: "No video selected",
@@ -185,123 +211,140 @@ export default function Header() {
         </div>
       )}
       <Dialog open={openUploadDialog} onOpenChange={setOpenUploadDialog}>
+        <DialogOverlay className="bg-black/50 backdrop-blur-none" />
         <DialogContent
-          className="bg-white text-black max-w-5xl w-[95vw] 
-  max-h-[90vh] overflow-y-auto scrollbar-hide rounded-2xl p-6 sm:p-10"
+          ref={dialogContentRef}
+          className={`relative bg-white text-black max-w-5xl w-[95vw] 
+  max-h-[90vh] rounded-2xl p-6 sm:p-10
+  z-[100] fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+  overflow-y-auto scrollbar-hide`}
         >
-          {" "}
-          {/* Header */}
-          <div className="mb-8">
-            <h2 className="text-2xl font-semibold">Upload Video</h2>
-          </div>
-          {/* TOP ROW — VIDEO + THUMBNAIL */}
-          <div className="grid grid-cols-2 gap-6">
-            {/* VIDEO */}
-            <div className="rounded-xl border bg-gray-50 p-5">
-              <label className="text-sm font-medium text-gray-700">Video</label>
-
-              <div className="mt-4 h-56 flex items-center justify-center bg-white rounded-lg border">
-                {!selectedFile ? (
-                  <div className="w-full h-full">
-                    <FileUpload
-                      onChange={(files: File[]) => {
-                        if (!files.length) return;
-                        const file = files[0];
-                        setSelectedFile(file);
-
-                        if (!title) {
-                          setTitle(file.name.replace(/\.[^/.]+$/, ""));
-                        }
-                      }}
-                    />
+          {isUploading ? (
+            <div className="flex flex-col items-center justify-center h-64 gap-4">
+              <LoaderOne />
+              <p className="text-sm font-medium text-gray-600">
+                Uploading your video…
+              </p>
+            </div>
+          ) : (
+            <div ref={dialogRef} className="relative w-full h-full">
+              {/* Header */}
+              <div className="mb-8">
+                <h2 className="text-2xl font-semibold">Upload Video</h2>
+              </div>
+              {/* TOP ROW — VIDEO + THUMBNAIL */}
+              <div className="grid grid-cols-2 gap-6">
+                {/* VIDEO */}
+                <div className="rounded-xl border bg-gray-50 p-5">
+                  <label className="text-sm font-medium text-gray-700">
+                    Video
+                  </label>
+                  <div className="mt-4 h-56 flex items-center justify-center bg-white rounded-lg border">
+                    {!selectedFile ? (
+                      <div className="w-full h-full">
+                        <FileUpload
+                          onChange={(files: File[]) => {
+                            if (!files.length) return;
+                            const file = files[0];
+                            setSelectedFile(file);
+                            if (!title)
+                              setTitle(file.name.replace(/\.[^/.]+$/, ""));
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="relative w-full h-full rounded-lg overflow-hidden">
+                        <video
+                          src={URL.createObjectURL(selectedFile)}
+                          controls
+                          className="w-full h-full object-contain"
+                        />
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="absolute top-3 right-3"
+                          onClick={() => setSelectedFile(null)}
+                        >
+                          Change
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="relative w-full h-full rounded-lg overflow-hidden">
-                    <video
-                      src={URL.createObjectURL(selectedFile)}
-                      controls
-                      className="w-full h-full object-contain"
-                    />
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="absolute top-3 right-3"
-                      onClick={() => setSelectedFile(null)}
-                    >
-                      Change
-                    </Button>
+                </div>
+
+                {/* THUMBNAIL */}
+                <div className="rounded-xl border bg-gray-50 p-5">
+                  <label className="text-sm font-medium text-gray-700">
+                    Thumbnail (Optional)
+                  </label>
+                  <div className="mt-4 h-56 flex items-center justify-center bg-white rounded-lg border">
+                    {!thumbnailFile ? (
+                      <div className="w-full h-full">
+                        <FileUpload
+                          accept="image/*"
+                          onChange={(files: File[]) => {
+                            if (!files.length) return;
+                            setThumbnailFile(files[0]);
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="relative w-full h-full rounded-lg overflow-hidden">
+                        <img
+                          src={URL.createObjectURL(thumbnailFile)}
+                          className="w-full h-full object-cover"
+                        />
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="absolute top-3 right-3"
+                          onClick={() => setThumbnailFile(null)}
+                        >
+                          Change
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
+              </div>
+
+              {/* TITLE */}
+              <div className="mt-8">
+                <label className="text-sm font-medium text-gray-700">
+                  Title
+                </label>
+                <Input
+                  placeholder="Enter video title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="mt-2"
+                />
+              </div>
+
+              {/* DESCRIPTION */}
+              <div className="mt-6">
+                <label className="text-sm font-medium text-gray-700">
+                  Description
+                </label>
+                <textarea
+                  className="w-full mt-2 min-h-[120px] rounded-lg border p-3 resize-none focus:outline-none focus:ring-2 focus:ring-black/10"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </div>
+
+              {/* BUTTON */}
+              <div className="mt-10 flex justify-center">
+                <Button
+                  onClick={handleUploadSubmit}
+                  disabled={!selectedFile || !title.trim()}
+                  className="px-10 py-3 rounded-xl border border-black bg-white text-black hover:bg-black hover:text-white transition-all duration-200 cursor-pointer"
+                >
+                  Upload Video
+                </Button>
               </div>
             </div>
-
-            {/* THUMBNAIL */}
-            <div className="rounded-xl border bg-gray-50 p-5">
-              <label className="text-sm font-medium text-gray-700">
-                Thumbnail (Optional)
-              </label>
-
-              <div className="mt-4 h-56 flex items-center justify-center bg-white rounded-lg border">
-                {!thumbnailFile ? (
-                  <div className="w-full h-full">
-                    <FileUpload
-                      accept="image/*"
-                      onChange={(files: File[]) => {
-                        if (!files.length) return;
-                        setThumbnailFile(files[0]);
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div className="relative w-full h-full rounded-lg overflow-hidden">
-                    <img
-                      src={URL.createObjectURL(thumbnailFile)}
-                      className="w-full h-full object-cover"
-                    />
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="absolute top-3 right-3"
-                      onClick={() => setThumbnailFile(null)}
-                    >
-                      Change
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          {/* TITLE */}
-          <div className="mt-8">
-            <label className="text-sm font-medium text-gray-700">Title</label>
-            <Input
-              placeholder="Enter video title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="mt-2"
-            />
-          </div>
-          {/* DESCRIPTION */}
-          <div className="mt-6">
-            <label className="text-sm font-medium text-gray-700">
-              Description
-            </label>
-            <textarea
-              className="w-full mt-2 min-h-[120px] rounded-lg border p-3 resize-none focus:outline-none focus:ring-2 focus:ring-black/10"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-          {/* BUTTON */}
-          <div className="mt-10 flex justify-center">
-            <Button
-              onClick={handleUploadSubmit}
-              disabled={!selectedFile || !title.trim()}
-              className="px-10 py-3 rounded-xl border border-black bg-white text-black hover:bg-black hover:text-white transition-all duration-200 cursor-pointer"
-            >
-              Upload Video
-            </Button>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
