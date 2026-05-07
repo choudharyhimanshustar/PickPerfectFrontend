@@ -7,7 +7,6 @@ import { IoIosAdd } from "react-icons/io";
 import {
   usePresignedUrl,
   useUploadVideo,
-  useVideoUploadComplete,
 } from "@/api/hooks/useUpload";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -41,7 +40,6 @@ export default function Header() {
   const fileRef = useRef<HTMLInputElement>(null);
   const { mutateAsync: getUrl, isPending } = usePresignedUrl();
   const uploadMutation = useUploadVideo();
-  const { mutateAsync: triggerThumbnailGeneration } = useVideoUploadComplete();
   const isUploading = isPending || uploadMutation.isPending;
   const { data, isLoading, isError } = useMe();
   const logoutMutation = useLogout();
@@ -110,11 +108,14 @@ export default function Header() {
       }
 
       await Promise.all(uploads);
-
+      console.log("Cache keys:", queryClient.getQueryCache().getAll().map(q => q.queryKey));
+      console.log("[Header] queryClient hash:", queryClient.getMutationCache());
+      await queryClient.invalidateQueries({ queryKey: ["all-videos"] });
       setOpenUploadDialog(false);
       setSelectedFile(null);
       setTitle("");
       setDescription("");
+      router.push("/videos");
     } catch (err) {
       console.error(err);
       toast({

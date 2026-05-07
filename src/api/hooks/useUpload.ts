@@ -3,10 +3,8 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   getPresignedUrl,
   uploadToS3,
-  videoUploadComplete,
 } from "../endpoints/upload";
 import { useQueryClient } from "@tanstack/react-query";
-import { VideoService } from "../endpoints/videos";
 
 interface UploadParams {
   file: File;
@@ -38,14 +36,3 @@ export const useUploadVideo = () => {
   });
 };
 
-export const useVideoUploadComplete = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (videoId: string) => videoUploadComplete(videoId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["videos"],
-      });
-    },
-  });
-};

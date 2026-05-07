@@ -11,4 +11,8 @@ export const VideoService = {
     const response = await axiosInstance.get(`/api/videos/${videoId}/analysis`);
     return response.data;
   },
+  async retryThumbnail(videoId: string) {
+    const response = await axiosInstance.post(`/api/videos/${videoId}/retry-thumbnail`);
+    return response.data;
+  },
 };

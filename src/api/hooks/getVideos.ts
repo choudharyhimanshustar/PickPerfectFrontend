@@ -1,19 +1,23 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery,useMutation  } from "@tanstack/react-query";
 import { VideoService } from "../endpoints/videos";
 import { useEffect, useRef } from "react";
 
 interface VideoItem {
   video_id: string;
-  thumbnail_url?: string;
-  [key: string]: unknown;
+  filename: string;
+  thumbnail_url: string | null;
+  thumbnail_status: "ready" | "failed" | "processing";
 }
 
-type PatchFn = (videoId: string, thumbnailUrl: string) => void;
+type PatchFn = (videoId: string, thumbnailUrl: string | null, status?: "ready" | "failed") => void;
 
 export const useAllVideos = () => {
   return useQuery({
     queryKey: ["all-videos"],
-    queryFn: () => VideoService.getAllVideos(),
+    queryFn: () => {
+      console.log("[useAllVideos] queryFn fired");
+      return VideoService.getAllVideos();
+    },
     staleTime: 0,
     refetchOnMount: "always",
   });
@@ -38,7 +42,7 @@ export function useThumbnailSSE(videos: VideoItem[], onPatch: PatchFn) {
     if (!videos?.length) return;
 
     const pendingIds = videos
-      .filter((v) => !v.thumbnail_url)
+      .filter((v) => !v.thumbnail_url && v.thumbnail_status !== "failed")  // ← skip already-failed
       .map((v) => v.video_id);
 
     if (!pendingIds.length) return;
@@ -49,39 +53,56 @@ export function useThumbnailSSE(videos: VideoItem[], onPatch: PatchFn) {
     const url = `/videos/thumbnails/progress?${params.toString()}`;
     const es = new EventSource(url, { withCredentials: true });
     esRef.current = es;
-    // Add these immediately after creating es:
-    console.log("ESopening to:", url);
+
     es.onopen = () => console.log("ES opened, readyState:", es.readyState);
     es.onerror = (e) => console.log("ES error, readyState:", es.readyState, e);
+
     es.addEventListener("ping", () => {
-      console.log("SSE connected"); // remove after confirming
+      console.log("SSE connected");
     });
 
     es.addEventListener("thumbnail_ready", (e: MessageEvent) => {
-      console.log("Thumbnail ready event received:", e.data);
       const { video_id, thumbnail_url } = JSON.parse(e.data);
-      onPatchRef.current(video_id, thumbnail_url);
+      onPatchRef.current(video_id, thumbnail_url, "ready");
     });
 
-    es.addEventListener("done", () => {
-      es.close();
+    // ← NEW
+    es.addEventListener("thumbnail_failed", (e: MessageEvent) => {
+      const { video_id } = JSON.parse(e.data);
+      onPatchRef.current(video_id, null, "failed");  // null url, failed status
     });
+
+    es.addEventListener("done", () => es.close());
 
     es.onerror = () => {
-      if (es.readyState === EventSource.CLOSED) {
-        es.close();
-      }
+      if (es.readyState === EventSource.CLOSED) es.close();
     };
 
-    return () => {
-      es.close();
-    };
+    return () => es.close();
 
-    // ✅ Keyed on pending ids — re-runs as thumbnails resolve
   }, [
     videos
-      ?.filter((v) => !v.thumbnail_url)
+      ?.filter((v) => !v.thumbnail_url && v.thumbnail_status !== "failed")  // ← skip failed
       .map((v) => v.video_id)
       .join(","),
   ]);
+}
+
+export function useRetryThumbnail(
+  onOptimisticUpdate: (videoId: string) => void,
+  onError: (videoId: string) => void,
+) {
+  return useMutation({
+    mutationFn: (videoId: string) => VideoService.retryThumbnail(videoId),
+
+    onMutate: (videoId) => {
+      // optimistically flip to processing before request fires
+      onOptimisticUpdate(videoId);
+    },
+
+    onError: (_err, videoId) => {
+      // revert back to failed if request fails
+      onError(videoId);
+    },
+  });
 }

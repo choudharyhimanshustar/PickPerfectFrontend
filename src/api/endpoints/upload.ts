@@ -41,13 +41,3 @@ export const uploadToS3 = async ({
   return url.split("?")[0];
 };
 
-export const videoUploadComplete = async (videoId: string) => {
-  const { data } = await axiosInstance.post(
-    "api/videos/video-upload-complete",
-    {
-      video_id: videoId,
-    }
-  );
-
-  return data;
-};
