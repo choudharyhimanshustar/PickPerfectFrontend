@@ -1,15 +1,35 @@
-import { useQuery,useMutation  } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { VideoService } from "../endpoints/videos";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ProgressMessage, VideoStatus } from "../../lib/types/video";
+import { UseVideoProgressReturn } from "../../lib/types/video";
+import { VideoItem, PatchFn } from "../../lib/types/video";
 
-interface VideoItem {
-  video_id: string;
-  filename: string;
-  thumbnail_url: string | null;
-  thumbnail_status: "ready" | "failed" | "processing";
+const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:8000";
+
+// --- Exponential backoff config ---
+const INITIAL_RECONNECT_DELAY_MS = 1000;
+const MAX_RECONNECT_DELAY_MS = 30000;
+const BACKOFF_MULTIPLIER = 2;
+
+// --- Heartbeat config ---
+const PING_INTERVAL_MS = 30000; // send ping every 30s
+const PONG_TIMEOUT_MS = 10000; // expect pong within 10s
+
+const TERMINAL_CLOSE_CODES = [
+  1002, // Protocol error
+  1003, // Unsupported data
+  1008, // Policy violation (e.g. auth failure)
+  1011, // Server encountered an error (unrecoverable)
+];
+
+const TERMINAL_STATUSES: VideoStatus[] = ["completed", "failed"];
+
+function getBackoffDelay(attempt: number): number {
+  const delay =
+    INITIAL_RECONNECT_DELAY_MS * Math.pow(BACKOFF_MULTIPLIER, attempt);
+  return Math.min(delay, MAX_RECONNECT_DELAY_MS);
 }
-
-type PatchFn = (videoId: string, thumbnailUrl: string | null, status?: "ready" | "failed") => void;
 
 export const useAllVideos = () => {
   return useQuery({
@@ -42,7 +62,7 @@ export function useThumbnailSSE(videos: VideoItem[], onPatch: PatchFn) {
     if (!videos?.length) return;
 
     const pendingIds = videos
-      .filter((v) => !v.thumbnail_url && v.thumbnail_status !== "failed")  // ← skip already-failed
+      .filter((v) => !v.thumbnail_url && v.thumbnail_status !== "failed") // ← skip already-failed
       .map((v) => v.video_id);
 
     if (!pendingIds.length) return;
@@ -69,7 +89,7 @@ export function useThumbnailSSE(videos: VideoItem[], onPatch: PatchFn) {
     // ← NEW
     es.addEventListener("thumbnail_failed", (e: MessageEvent) => {
       const { video_id } = JSON.parse(e.data);
-      onPatchRef.current(video_id, null, "failed");  // null url, failed status
+      onPatchRef.current(video_id, null, "failed"); // null url, failed status
     });
 
     es.addEventListener("done", () => es.close());
@@ -79,10 +99,9 @@ export function useThumbnailSSE(videos: VideoItem[], onPatch: PatchFn) {
     };
 
     return () => es.close();
-
   }, [
     videos
-      ?.filter((v) => !v.thumbnail_url && v.thumbnail_status !== "failed")  // ← skip failed
+      ?.filter((v) => !v.thumbnail_url && v.thumbnail_status !== "failed") // ← skip failed
       .map((v) => v.video_id)
       .join(","),
   ]);
@@ -105,4 +124,140 @@ export function useRetryThumbnail(
       onError(videoId);
     },
   });
+}
+
+export function useVideoProgress(videoId: string): UseVideoProgressReturn {
+  const [status, setStatus] = useState<VideoStatus | null>(null);
+  const [progress, setProgress] = useState<number>(0);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [step, setStep] = useState<string | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pingTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pongTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isTerminal = useRef<boolean>(false);
+  const attemptCount = useRef<number>(0);
+
+  useEffect(() => {
+    if (!videoId) return;
+
+    isTerminal.current = false; // ← reset so Strict Mode remount can connect
+    attemptCount.current = 0; // ← reset backoff too
+
+    function clearHeartbeat() {
+      if (pingTimer.current) clearInterval(pingTimer.current);
+      if (pongTimer.current) clearTimeout(pongTimer.current);
+      pingTimer.current = null;
+      pongTimer.current = null;
+    }
+
+    function startHeartbeat(ws: WebSocket) {
+      pingTimer.current = setInterval(() => {
+        if (ws.readyState !== WebSocket.OPEN) return;
+
+        // Send ping
+        ws.send(JSON.stringify({ type: "__ping__" }));
+
+        // Expect pong back within PONG_TIMEOUT_MS
+        pongTimer.current = setTimeout(() => {
+          console.warn("[WS] Pong timeout — connection is stale, reconnecting");
+          ws.close();
+        }, PONG_TIMEOUT_MS);
+      }, PING_INTERVAL_MS);
+    }
+
+    function connect() {
+      if (isTerminal.current) return;
+      console.log(WS_BASE_URL);
+      const ws = new WebSocket(`${WS_BASE_URL}/videos/ws/progress/${videoId}`);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        setIsConnected(true);
+        attemptCount.current = 0; // reset backoff on successful connect
+        startHeartbeat(ws);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data: ProgressMessage & { type?: string } = JSON.parse(
+            event.data,
+          );
+          console.log("📨 Message:", data.type, data.step, data.percent);
+
+          // Handle pong — clear the pong timeout
+          if (data.type === "__pong__") {
+            if (pongTimer.current) {
+              clearTimeout(pongTimer.current);
+              pongTimer.current = null;
+            }
+            return;
+          }
+
+          setStep(data.step ?? null);
+          setStatus(data.type as VideoStatus);
+          setProgress(data.percent ?? 0);
+          setMessage(data.message ?? null);
+
+          if (TERMINAL_STATUSES.includes(data.status)) {
+            isTerminal.current = true;
+            ws.close(1000, "Job complete");
+          }
+        } catch (e) {
+          console.warn("[WS] Failed to parse message:", e);
+        }
+      };
+
+      ws.onclose = (event) => {
+        console.log(
+          "WS closed — code:",
+          event.code,
+          "reason:",
+          event.reason,
+          "wasClean:",
+          event.wasClean,
+        );
+        setIsConnected(false);
+        clearHeartbeat();
+
+        // Don't reconnect if job is done or close code is unrecoverable
+        if (isTerminal.current) return;
+
+        if (TERMINAL_CLOSE_CODES.includes(event.code)) {
+          console.error(
+            `[WS] Terminal close code ${event.code} — not reconnecting`,
+          );
+          isTerminal.current = true;
+          return;
+        }
+
+        // Exponential backoff reconnect
+        const delay = getBackoffDelay(attemptCount.current);
+        console.log(
+          `[WS] Reconnecting in ${delay}ms (attempt ${attemptCount.current + 1})`,
+        );
+        attemptCount.current += 1;
+        reconnectTimer.current = setTimeout(connect, delay);
+      };
+
+      ws.onerror = (event) => {
+        console.log("WS error:", event);
+        // onerror always fires onclose right after — reconnect logic lives there
+        ws.close();
+      };
+    }
+
+    connect();
+
+    return () => {
+      isTerminal.current = true;
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+      if (pingTimer.current) clearInterval(pingTimer.current);
+      if (pongTimer.current) clearTimeout(pongTimer.current);
+      wsRef.current?.close();
+    };
+  }, [videoId]);
+
+  return { status, progress, message, isConnected };
 }

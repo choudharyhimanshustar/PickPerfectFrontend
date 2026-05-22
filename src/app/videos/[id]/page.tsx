@@ -2,11 +2,16 @@
 
 import React from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useAllVideos, useVideoAnalysis } from "@/api/hooks/getVideos";
+import {
+  useAllVideos,
+  useVideoAnalysis,
+  useVideoProgress,
+} from "@/api/hooks/getVideos";
 import { IoArrowBack } from "react-icons/io5";
 import { PiGuitar } from "react-icons/pi";
 import { GoPulse } from "react-icons/go";
 import { PiRankingDuotone } from "react-icons/pi";
+import ProcessingProgress from "@/components/processingProgress";
 
 function getGradeColor(grade: string) {
   switch (grade) {
@@ -39,7 +44,17 @@ export default function VideoDetailPage() {
   const router = useRouter();
   const { data: videos } = useAllVideos();
   const { data: analysis, isLoading, isError } = useVideoAnalysis(id);
+  const { status, progress, message, step, isConnected } = useVideoProgress(id);
+  const isStillProcessing =
+    isLoading ||
+    isError || // ← treat error as "still processing, not failed yet"
+    (analysis && analysis.status !== "processed");
 
+  console.log("isLoading:", isLoading);
+  console.log("isError:", isError);
+  console.log("analysis:", analysis);
+  console.log("isStillProcessing:", isStillProcessing);
+  console.log("isConnected:", isConnected);
   const video = videos?.find((v: any) => v.video_id === id);
 
   return (
@@ -84,21 +99,22 @@ export default function VideoDetailPage() {
 
           {/* Right: Performance Score + Loading/Error states */}
           <div className="space-y-6">
-            {isLoading && (
-              <div className="rounded-2xl p-8 bg-zinc-900 border border-white/5 flex items-center justify-center min-h-[300px]">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-zinc-400 text-sm">Analyzing performance...</span>
-                </div>
-              </div>
+            {(isStillProcessing || isConnected) && (
+              <ProcessingProgress
+                step={step}
+                status={status}
+                percent={progress}
+                message={message}
+                isConnected={isConnected}
+              />
             )}
-
-            {isError && (
+            {isError && !isConnected && (
               <div className="rounded-2xl p-8 bg-zinc-900 border border-red-500/20">
-                <p className="text-red-400 text-sm">Failed to load analysis. The video may still be processing.</p>
+                <p className="text-red-400 text-sm">
+                  Failed to load analysis. The video may still be processing.
+                </p>
               </div>
             )}
-
             {analysis?.status === "processed" && analysis.analysis && (
               <div className="rounded-2xl p-6 bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/5 shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
                 <div className="flex items-center gap-2 mb-5">
@@ -125,7 +141,11 @@ export default function VideoDetailPage() {
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-zinc-300">Chord Confidence</span>
                       <span className="text-zinc-400">
-                        {Math.round(analysis.analysis.performance_score.details.chord_confidence * 100)}%
+                        {Math.round(
+                          analysis.analysis.performance_score.details
+                            .chord_confidence * 100,
+                        )}
+                        %
                       </span>
                     </div>
                     <div className="h-2 rounded-full bg-white/10 overflow-hidden">
@@ -141,7 +161,11 @@ export default function VideoDetailPage() {
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-zinc-300">Rhythm Score</span>
                       <span className="text-zinc-400">
-                        {Math.round(analysis.analysis.performance_score.details.rhythm_score * 100)}%
+                        {Math.round(
+                          analysis.analysis.performance_score.details
+                            .rhythm_score * 100,
+                        )}
+                        %
                       </span>
                     </div>
                     <div className="h-2 rounded-full bg-white/10 overflow-hidden">
@@ -163,7 +187,6 @@ export default function VideoDetailPage() {
                 </div>
               </div>
             )}
-
             {analysis && analysis.status !== "processed" && (
               <div className="rounded-2xl p-8 bg-zinc-900 border border-white/5 flex items-center justify-center min-h-[300px]">
                 <div className="flex flex-col items-center gap-3">
@@ -189,26 +212,34 @@ export default function VideoDetailPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-3 rounded-lg bg-black/30">
-                  <p className="text-xs text-zinc-500 uppercase tracking-wide">Tempo</p>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wide">
+                    Tempo
+                  </p>
                   <p className="text-xl font-bold mt-1">
                     {analysis.analysis.rhythm.tempo_bpm}
                     <span className="text-sm text-zinc-500 ml-1">BPM</span>
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-black/30">
-                  <p className="text-xs text-zinc-500 uppercase tracking-wide">Strums/sec</p>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wide">
+                    Strums/sec
+                  </p>
                   <p className="text-xl font-bold mt-1">
                     {analysis.analysis.rhythm.strums_per_second}
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-black/30">
-                  <p className="text-xs text-zinc-500 uppercase tracking-wide">Rhythm Score</p>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wide">
+                    Rhythm Score
+                  </p>
                   <p className="text-xl font-bold mt-1">
                     {Math.round(analysis.analysis.rhythm.rhythm_score * 100)}%
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-black/30">
-                  <p className="text-xs text-zinc-500 uppercase tracking-wide">Quality</p>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wide">
+                    Quality
+                  </p>
                   <p className="mt-1">
                     <span
                       className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium text-black capitalize ${getRhythmColor(analysis.analysis.rhythm.rhythm_quality)}`}
@@ -234,7 +265,10 @@ export default function VideoDetailPage() {
                     {analysis.analysis.chords.top_chord.chord}
                   </span>
                   <span className="text-sm text-emerald-400">
-                    {Math.round(analysis.analysis.chords.top_chord.confidence * 100)}% confidence
+                    {Math.round(
+                      analysis.analysis.chords.top_chord.confidence * 100,
+                    )}
+                    % confidence
                   </span>
                 </div>
               </div>
@@ -242,8 +276,9 @@ export default function VideoDetailPage() {
               <div>
                 <p className="text-sm text-zinc-400 mb-2">Alternatives</p>
                 <div className="space-y-2">
-                  {analysis.analysis.chords.alternatives.slice(1).map(
-                    (alt: any, i: number) => (
+                  {analysis.analysis.chords.alternatives
+                    .slice(1)
+                    .map((alt: any, i: number) => (
                       <div
                         key={i}
                         className="flex items-center justify-between text-sm"
@@ -261,8 +296,7 @@ export default function VideoDetailPage() {
                           </span>
                         </div>
                       </div>
-                    )
-                  )}
+                    ))}
                 </div>
               </div>
             </div>
