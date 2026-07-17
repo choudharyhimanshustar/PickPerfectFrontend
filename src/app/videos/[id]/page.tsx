@@ -12,6 +12,7 @@ import { PiGuitar } from "react-icons/pi";
 import { GoPulse } from "react-icons/go";
 import { PiRankingDuotone } from "react-icons/pi";
 import ProcessingProgress from "@/components/processingProgress";
+import { VideoItem } from "@/lib/types/video";
 
 function getGradeColor(grade: string) {
   switch (grade) {
@@ -55,7 +56,7 @@ export default function VideoDetailPage() {
   console.log("analysis:", analysis);
   console.log("isStillProcessing:", isStillProcessing);
   console.log("isConnected:", isConnected);
-  const video = videos?.find((v: any) => v.video_id === id);
+  const video = videos?.find((v: VideoItem) => v.video_id === id);
 
   return (
     <div className="min-h-screen p-4 md:p-8 text-white">
@@ -74,9 +75,9 @@ export default function VideoDetailPage() {
           {/* Left: Video Player */}
           <div>
             <div className="rounded-2xl overflow-hidden bg-zinc-900 border border-white/5">
-              {video?.url ? (
+              {video?.video_url ? (
                 <video
-                  src={video.url}
+                  src={video.video_url}
                   className="w-full aspect-video bg-black"
                   controls
                   autoPlay

@@ -19,6 +19,7 @@ export type UseVideoProgressReturn = {
 export interface VideoItem {
   video_id: string;
   filename: string;
+  video_url: string | null;
   thumbnail_url: string | null;
   thumbnail_status: "ready" | "failed" | "processing";
 }

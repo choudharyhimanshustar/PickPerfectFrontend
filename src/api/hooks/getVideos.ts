@@ -167,10 +167,27 @@ export function useVideoProgress(videoId: string): UseVideoProgressReturn {
       }, PING_INTERVAL_MS);
     }
 
-    function connect() {
+    async function connectWithToken() {
+      try {
+        const res = await fetch("/api/auth/ws-token", {
+          credentials: "include",
+        });
+        const { token } = await res.json();
+        connect(token);
+      } catch (e) {
+        console.error("[WS] Failed to fetch ws-token:", e);
+        // retry after backoff
+        const delay = getBackoffDelay(attemptCount.current);
+        attemptCount.current += 1;
+        reconnectTimer.current = setTimeout(connectWithToken, delay);
+      }
+    }
+
+    function connect(token: string) {
       if (isTerminal.current) return;
-      console.log(WS_BASE_URL);
-      const ws = new WebSocket(`${WS_BASE_URL}/videos/ws/progress/${videoId}`);
+      const ws = new WebSocket(
+        `${WS_BASE_URL}/videos/ws/progress/${videoId}?token=${token}`,
+      );
       wsRef.current = ws;
 
       ws.onopen = () => {
@@ -200,7 +217,7 @@ export function useVideoProgress(videoId: string): UseVideoProgressReturn {
           setProgress(data.percent ?? 0);
           setMessage(data.message ?? null);
 
-          if (TERMINAL_STATUSES.includes(data.status)) {
+          if (data.type && TERMINAL_STATUSES.includes(data.type as VideoStatus)) {
             isTerminal.current = true;
             ws.close(1000, "Job complete");
           }
@@ -238,7 +255,7 @@ export function useVideoProgress(videoId: string): UseVideoProgressReturn {
           `[WS] Reconnecting in ${delay}ms (attempt ${attemptCount.current + 1})`,
         );
         attemptCount.current += 1;
-        reconnectTimer.current = setTimeout(connect, delay);
+        reconnectTimer.current = setTimeout(connectWithToken, delay);
       };
 
       ws.onerror = (event) => {
@@ -248,7 +265,7 @@ export function useVideoProgress(videoId: string): UseVideoProgressReturn {
       };
     }
 
-    connect();
+    connectWithToken();
 
     return () => {
       isTerminal.current = true;
@@ -259,5 +276,5 @@ export function useVideoProgress(videoId: string): UseVideoProgressReturn {
     };
   }, [videoId]);
 
-  return { status, progress, message, isConnected };
+  return { status, progress, message, step, isConnected };
 }

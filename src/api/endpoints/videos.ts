@@ -1,7 +1,8 @@
 import  axiosInstance  from "../axiosInstance";
+import { VideoItem } from "../../lib/types/video";
 
 export const VideoService = {
-  async getAllVideos() {
+  async getAllVideos(): Promise<VideoItem[]> {
     console.log("FETCHING ALL VIDEOS");
     const response = await axiosInstance.get("/api/all-videos");
     return response.data.videos; // returns array of videos
