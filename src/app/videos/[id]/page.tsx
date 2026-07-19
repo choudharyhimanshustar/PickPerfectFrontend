@@ -45,17 +45,17 @@ export default function VideoDetailPage() {
   const router = useRouter();
   const { data: videos } = useAllVideos();
   const { data: analysis, isLoading, isError } = useVideoAnalysis(id);
-  const { status, progress, message, step, isConnected } = useVideoProgress(id);
+  const isProcessed = analysis?.status === "processed";
+  const { status, progress, message, step, isConnected } = useVideoProgress(
+    id,
+    !isProcessed,
+  );
   const isStillProcessing =
-    isLoading ||
-    isError || // ← treat error as "still processing, not failed yet"
-    (analysis && analysis.status !== "processed");
+    !isProcessed &&
+    (isLoading ||
+      isError || // ← treat error as "still processing, not failed yet"
+      (analysis && analysis.status !== "processed"));
 
-  console.log("isLoading:", isLoading);
-  console.log("isError:", isError);
-  console.log("analysis:", analysis);
-  console.log("isStillProcessing:", isStillProcessing);
-  console.log("isConnected:", isConnected);
   const video = videos?.find((v: VideoItem) => v.video_id === id);
 
   return (
@@ -100,7 +100,7 @@ export default function VideoDetailPage() {
 
           {/* Right: Performance Score + Loading/Error states */}
           <div className="space-y-6">
-            {(isStillProcessing || isConnected) && (
+            {!isProcessed && (isStillProcessing || isConnected) && (
               <ProcessingProgress
                 step={step}
                 status={status}

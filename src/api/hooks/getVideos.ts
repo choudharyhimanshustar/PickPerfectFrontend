@@ -126,7 +126,10 @@ export function useRetryThumbnail(
   });
 }
 
-export function useVideoProgress(videoId: string): UseVideoProgressReturn {
+export function useVideoProgress(
+  videoId: string,
+  enabled: boolean = true,
+): UseVideoProgressReturn {
   const [status, setStatus] = useState<VideoStatus | null>(null);
   const [progress, setProgress] = useState<number>(0);
   const [message, setMessage] = useState<string | null>(null);
@@ -140,7 +143,7 @@ export function useVideoProgress(videoId: string): UseVideoProgressReturn {
   const attemptCount = useRef<number>(0);
 
   useEffect(() => {
-    if (!videoId) return;
+    if (!videoId || !enabled) return;
 
     isTerminal.current = false; // ← reset so Strict Mode remount can connect
     attemptCount.current = 0; // ← reset backoff too
@@ -273,8 +276,9 @@ export function useVideoProgress(videoId: string): UseVideoProgressReturn {
       if (pingTimer.current) clearInterval(pingTimer.current);
       if (pongTimer.current) clearTimeout(pongTimer.current);
       wsRef.current?.close();
+      setIsConnected(false);
     };
-  }, [videoId]);
+  }, [videoId, enabled]);
 
   return { status, progress, message, step, isConnected };
 }
