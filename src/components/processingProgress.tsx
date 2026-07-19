@@ -12,7 +12,7 @@ function ConnectionPill({
   isConnected: boolean;
   status: VideoStatus | null;
 }) {
-  if (status === "completed") {
+  if (status === "processed") {
     return (
       <span className="flex items-center gap-1.5 text-xs text-emerald-400">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
@@ -100,7 +100,7 @@ export default function ProcessingProgress({
       {/* Steps */}
       <div className="flex-1 space-y-0">
         {STEPS.map((s, i) => {
-          const state = resolveStepState(i, activeIdx, status ?? "pending");
+          const state = resolveStepState(i, activeIdx, status ?? "pending_upload");
           const isLast = i === STEPS.length - 1;
  
           return (
@@ -170,7 +170,7 @@ export default function ProcessingProgress({
               background:
                 status === "failed"
                   ? "rgb(248 113 113)"
-                  : status === "completed"
+                  : status === "processed"
                   ? "rgb(52 211 153)"
                   : "rgb(96 165 250)",
             }}

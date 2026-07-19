@@ -19,9 +19,9 @@ export function resolveStepState(
   activeIdx: number,
   status: VideoStatus,
 ): StepState {
-  if (status === "completed") return "done"; // ← ALL steps done when completed
+  if (status === "processed") return "done"; // ← ALL steps done when processed
   if (status === "failed" && stepIdx === activeIdx) return "failed";
   if (stepIdx < activeIdx) return "done";
-  if (stepIdx === activeIdx && status === "progress") return "active";
+  if (stepIdx === activeIdx && status === "processing") return "active";
   return "pending";
 }

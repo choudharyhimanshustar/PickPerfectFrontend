@@ -1,4 +1,9 @@
-export type VideoStatus = "pending" | "processing" | "completed" | "failed" | "progress";
+// Canonical processing statuses — must match the backend VideoStatus enum.
+export type VideoStatus =
+  | "pending_upload"
+  | "processing"
+  | "processed"
+  | "failed";
 
 export type ProgressMessage = {
   status: VideoStatus;
@@ -79,7 +84,7 @@ export const STEPS: Step[] = [
     sub: "Saving results and generating thumbnail",
   },
   {
-    key:"completed",
+    key:"processed",
     label:"Completed",
     sub:"Processing complete!"
   }

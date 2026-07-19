@@ -23,7 +23,7 @@ const TERMINAL_CLOSE_CODES = [
   1011, // Server encountered an error (unrecoverable)
 ];
 
-const TERMINAL_STATUSES: VideoStatus[] = ["completed", "failed"];
+const TERMINAL_STATUSES: VideoStatus[] = ["processed", "failed"];
 
 function getBackoffDelay(attempt: number): number {
   const delay =
