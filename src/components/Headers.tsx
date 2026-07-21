@@ -8,6 +8,7 @@ import {
   usePresignedUrl,
   useUploadVideo,
 } from "@/api/hooks/useUpload";
+import { confirmUpload } from "@/api/endpoints/upload";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Dialog,
@@ -108,8 +109,12 @@ export default function Header() {
       }
 
       await Promise.all(uploads);
-      console.log("Cache keys:", queryClient.getQueryCache().getAll().map(q => q.queryKey));
-      console.log("[Header] queryClient hash:", queryClient.getMutationCache());
+
+      // Confirm the upload so the backend promotes it out of awaiting_upload.
+      // If this fails, treat the whole upload as failed (the catch below fires)
+      // — the orphaned doc will be garbage-collected server-side.
+      await confirmUpload(presigned.video_id);
+
       await queryClient.invalidateQueries({ queryKey: ["all-videos"] });
       setOpenUploadDialog(false);
       setSelectedFile(null);

@@ -1,5 +1,6 @@
 // Canonical processing statuses — must match the backend VideoStatus enum.
 export type VideoStatus =
+  | "awaiting_upload"
   | "pending_upload"
   | "processing"
   | "processed"

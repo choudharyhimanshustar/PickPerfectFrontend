@@ -41,3 +41,12 @@ export const uploadToS3 = async ({
   return url.split("?")[0];
 };
 
+// Confirm the upload succeeded so the backend promotes the doc from
+// awaiting_upload -> pending_upload (otherwise it stays hidden and is GC'd).
+export const confirmUpload = async (videoId: string) => {
+  const { data } = await axiosInstance.post(
+    `/api/videos/${videoId}/confirm-upload`,
+  );
+  return data;
+};
+
