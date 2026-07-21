@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useAllVideos,
   useVideoAnalysis,
@@ -43,6 +44,7 @@ function getRhythmColor(quality: string) {
 export default function VideoDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { data: videos } = useAllVideos();
   const { data: analysis, isLoading, isError } = useVideoAnalysis(id);
   const isProcessed = analysis?.status === "processed";
@@ -50,6 +52,16 @@ export default function VideoDetailPage() {
     id,
     !isProcessed,
   );
+
+  // The WS only updates local progress state — it doesn't refetch the analysis
+  // query. When processing finishes, pull the freshly-saved analysis (and
+  // refresh the grid) so the results render without a manual page refresh.
+  React.useEffect(() => {
+    if (status === "processed") {
+      queryClient.invalidateQueries({ queryKey: ["video-analysis", id] });
+      queryClient.invalidateQueries({ queryKey: ["all-videos"] });
+    }
+  }, [status, id, queryClient]);
   const isStillProcessing =
     !isProcessed &&
     (isLoading ||
