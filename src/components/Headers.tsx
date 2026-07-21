@@ -185,7 +185,11 @@ export default function Header() {
       </div>
       {pathname === "/" ? (
         isLoading ? null : data?.authenticated ? (
-          <UserMenu name={"User"} imageUrl={""} onLogout={handleLogout} />
+          <UserMenu
+            email={data?.email ?? null}
+            createdAt={data?.created_at ?? null}
+            onLogout={handleLogout}
+          />
         ) : (
           /* ---------- SIGN IN ---------- */
           <Dialog>

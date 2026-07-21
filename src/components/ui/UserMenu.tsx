@@ -9,26 +9,33 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FaUserCircle } from "react-icons/fa";
 
 type Props = {
-  name?: string;
-  imageUrl?: string;
+  email?: string | null;
+  createdAt?: string | null;
   onLogout: () => void;
 };
 
-export default function UserMenu({
-  name = "Himanshu",
-  imageUrl,
-  onLogout,
-}: Props) {
-  const initials =
-    name
-      ?.split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase() || "U";
+// Two-letter initials from the email's local part, e.g. "hello@x.ai" -> "HE".
+function initialsFromEmail(email?: string | null) {
+  const local = email?.split("@")[0] ?? "";
+  return local.slice(0, 2).toUpperCase() || "U";
+}
+
+function formatMemberSince(createdAt?: string | null) {
+  if (!createdAt) return null;
+  const date = new Date(createdAt);
+  if (isNaN(date.getTime())) return null;
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "long",
+  });
+}
+
+export default function UserMenu({ email, createdAt, onLogout }: Props) {
+  const initials = initialsFromEmail(email);
+  const memberSince = formatMemberSince(createdAt);
 
   return (
     <DropdownMenu>
@@ -44,8 +51,13 @@ export default function UserMenu({
       transition
       cursor-pointer
     "
+          aria-label="Open profile menu"
         >
-          <FaUserCircle size={24} />
+          {email ? (
+            <span className="text-sm font-semibold">{initials}</span>
+          ) : (
+            <FaUserCircle size={24} />
+          )}
         </button>
       </DropdownMenuTrigger>
 
@@ -53,7 +65,7 @@ export default function UserMenu({
         align="end"
         sideOffset={8}
         className="
-    w-48
+    w-56
     bg-white
     text-black
     border
@@ -70,17 +82,27 @@ export default function UserMenu({
     data-[side=bottom]:slide-in-from-top-2
   "
       >
-        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuLabel className="flex flex-col gap-0.5">
+          <span className="text-xs font-normal text-gray-500">
+            Signed in as
+          </span>
+          <span className="truncate text-sm font-medium">
+            {email ?? "Unknown"}
+          </span>
+          {memberSince && (
+            <span className="text-xs font-normal text-gray-400">
+              Member since {memberSince}
+            </span>
+          )}
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
+
+        <Link href="/profile">
+          <DropdownMenuItem className="cursor-pointer">Profile</DropdownMenuItem>
+        </Link>
 
         <Link href="/videos">
           <DropdownMenuItem className="cursor-pointer">Videos</DropdownMenuItem>
-        </Link>
-
-        <Link href="/settings">
-          <DropdownMenuItem className="cursor-pointer">
-            Settings
-          </DropdownMenuItem>
         </Link>
 
         <DropdownMenuSeparator />

@@ -6,6 +6,7 @@ export interface MeResponse {
   authenticated: boolean;
   user_id: string | null;
   email: string | null;
+  created_at: string | null;
 }
 
 
