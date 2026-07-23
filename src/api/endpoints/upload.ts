@@ -5,17 +5,23 @@ import axios from "axios";
 type PresignedRequest = {
   videoName: string;
   thumbnailName?: string;
+  title?: string;
+  description?: string;
 };
 
 export const getPresignedUrl = async ({
   videoName,
   thumbnailName,
+  title,
+  description,
 }: PresignedRequest) => {
   const { data } = await axiosInstance.post(
     "/api/videos/generate-presigned-url",
     {
       videoName,
       thumbnailName,
+      title,
+      description,
     }
   );
 

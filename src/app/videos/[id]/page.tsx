@@ -70,8 +70,12 @@ export default function VideoDetailPage() {
 
   const video = videos?.find((v: VideoItem) => v.video_id === id);
 
+  const [descExpanded, setDescExpanded] = React.useState(false);
+  const description = video?.description?.trim();
+  const isLongDescription = (description?.length ?? 0) > 180;
+
   return (
-    <div className="min-h-screen p-4 md:p-8 text-white">
+    <div className="min-h-screen p-4 text-white">
       {/* Back button */}
       <button
         onClick={() => router.push("/videos")}
@@ -81,141 +85,161 @@ export default function VideoDetailPage() {
         <span className="text-sm">Back to videos</span>
       </button>
 
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Top Row: Video + Performance Score */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left: Video Player */}
-          <div>
-            <div className="rounded-2xl overflow-hidden bg-zinc-900 border border-white/5">
-              {video?.video_url ? (
-                <video
-                  src={video.video_url}
-                  className="w-full aspect-video bg-black"
-                  controls
-                  autoPlay
-                />
-              ) : (
-                <div className="w-full aspect-video bg-black flex items-center justify-center">
-                  <span className="text-zinc-500">Loading video...</span>
-                </div>
-              )}
+      <div className="w-full space-y-8">
+        {/* Video Player — full width, top */}
+        <div className="rounded-2xl overflow-hidden bg-zinc-900 border border-white/5">
+          {video?.video_url ? (
+            <video
+              src={video.video_url}
+              className="w-full max-h-[70vh] object-contain bg-black"
+              controls
+              autoPlay
+            />
+          ) : (
+            <div className="w-full aspect-video max-h-[70vh] bg-black flex items-center justify-center">
+              <span className="text-zinc-500">Loading video...</span>
             </div>
-            <h1 className="mt-4 text-lg font-semibold truncate">
-              {video?.filename || analysis?.original_filename || "Video"}
+          )}
+        </div>
+
+        {/* 2 x 2 cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Details Card */}
+          <div className="rounded-2xl p-6 bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/5 flex flex-col">
+            <h1 className="text-lg font-semibold break-words">
+              {video?.title ||
+                video?.filename ||
+                analysis?.original_filename ||
+                "Video"}
             </h1>
+            {description && (
+              <>
+                <p
+                  className={`text-sm leading-relaxed text-zinc-400 mt-3 whitespace-pre-line break-words ${
+                    isLongDescription && !descExpanded ? "line-clamp-4" : ""
+                  }`}
+                >
+                  {description}
+                </p>
+                {isLongDescription && (
+                  <button
+                    onClick={() => setDescExpanded((v) => !v)}
+                    className="mt-2 self-start text-xs font-medium text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
+                  >
+                    {descExpanded ? "Show less" : "Show more"}
+                  </button>
+                )}
+              </>
+            )}
             {analysis?.analyzed_at && (
-              <p className="text-sm text-zinc-500 mt-1">
+              <p className="text-xs text-zinc-500 mt-auto pt-4">
                 Analyzed {new Date(analysis.analyzed_at).toLocaleDateString()}
               </p>
             )}
           </div>
 
-          {/* Right: Performance Score + Loading/Error states */}
-          <div className="space-y-6">
-            {!isProcessed && (isStillProcessing || isConnected) && (
-              <ProcessingProgress
-                step={step}
-                status={status}
-                percent={progress}
-                message={message}
-                isConnected={isConnected}
-              />
-            )}
-            {isError && !isConnected && (
-              <div className="rounded-2xl p-8 bg-zinc-900 border border-red-500/20">
-                <p className="text-red-400 text-sm">
-                  Failed to load analysis. The video may still be processing.
+          {/* Processing / error states */}
+          {!isProcessed && (isStillProcessing || isConnected) && (
+            <ProcessingProgress
+              step={step}
+              status={status}
+              percent={progress}
+              message={message}
+              isConnected={isConnected}
+            />
+          )}
+          {isError && !isConnected && (
+            <div className="rounded-2xl p-8 bg-zinc-900 border border-red-500/20">
+              <p className="text-red-400 text-sm">
+                Failed to load analysis. The video may still be processing.
+              </p>
+            </div>
+          )}
+          {analysis && analysis.status !== "processed" && (
+            <div className="rounded-2xl p-8 bg-zinc-900 border border-white/5 flex items-center justify-center min-h-[200px]">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                <span className="text-zinc-400 text-sm">
+                  Video is still being processed...
+                </span>
+              </div>
+            </div>
+          )}
+
+          {analysis?.status === "processed" && analysis.analysis && (
+            <>
+            {/* Performance Score Card */}
+            <div className="rounded-2xl p-6 bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/5">
+              <div className="flex items-center gap-2 mb-5">
+                <PiRankingDuotone className="text-xl text-emerald-400" />
+                <h3 className="text-lg font-semibold">Performance Score</h3>
+              </div>
+
+              <div className="flex items-end gap-2 mb-2">
+                <span className="text-5xl font-bold">
+                  {analysis.analysis.performance_score.score}
+                </span>
+                <span className="text-zinc-500 text-2xl">/ 100</span>
+              </div>
+
+              <span
+                className={`text-sm font-medium ${getGradeColor(analysis.analysis.performance_score.grade)}`}
+              >
+                {analysis.analysis.performance_score.grade}
+              </span>
+
+              {/* Score breakdown bars */}
+              <div className="mt-6 space-y-3">
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-zinc-300">Chord Confidence</span>
+                    <span className="text-zinc-400">
+                      {Math.round(
+                        analysis.analysis.performance_score.details
+                          .chord_confidence * 100,
+                      )}
+                      %
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-emerald-400 transition-all duration-500"
+                      style={{
+                        width: `${analysis.analysis.performance_score.details.chord_confidence * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-zinc-300">Rhythm Score</span>
+                    <span className="text-zinc-400">
+                      {Math.round(
+                        analysis.analysis.performance_score.details
+                          .rhythm_score * 100,
+                      )}
+                      %
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-blue-400 transition-all duration-500"
+                      style={{
+                        width: `${analysis.analysis.performance_score.details.rhythm_score * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Feedback */}
+              <div className="mt-6 p-4 rounded-lg bg-black/30 border border-white/5">
+                <p className="text-sm text-zinc-300">
+                  {analysis.analysis.performance_score.feedback}
                 </p>
               </div>
-            )}
-            {analysis?.status === "processed" && analysis.analysis && (
-              <div className="rounded-2xl p-6 bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/5 shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
-                <div className="flex items-center gap-2 mb-5">
-                  <PiRankingDuotone className="text-xl text-emerald-400" />
-                  <h3 className="text-lg font-semibold">Performance Score</h3>
-                </div>
+            </div>
 
-                <div className="flex items-end gap-2 mb-2">
-                  <span className="text-5xl font-bold">
-                    {analysis.analysis.performance_score.score}
-                  </span>
-                  <span className="text-zinc-500 text-2xl">/ 100</span>
-                </div>
-
-                <span
-                  className={`text-sm font-medium ${getGradeColor(analysis.analysis.performance_score.grade)}`}
-                >
-                  {analysis.analysis.performance_score.grade}
-                </span>
-
-                {/* Score breakdown bars */}
-                <div className="mt-6 space-y-3">
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-zinc-300">Chord Confidence</span>
-                      <span className="text-zinc-400">
-                        {Math.round(
-                          analysis.analysis.performance_score.details
-                            .chord_confidence * 100,
-                        )}
-                        %
-                      </span>
-                    </div>
-                    <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-emerald-400 transition-all duration-500"
-                        style={{
-                          width: `${analysis.analysis.performance_score.details.chord_confidence * 100}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-zinc-300">Rhythm Score</span>
-                      <span className="text-zinc-400">
-                        {Math.round(
-                          analysis.analysis.performance_score.details
-                            .rhythm_score * 100,
-                        )}
-                        %
-                      </span>
-                    </div>
-                    <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-blue-400 transition-all duration-500"
-                        style={{
-                          width: `${analysis.analysis.performance_score.details.rhythm_score * 100}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Feedback */}
-                <div className="mt-6 p-4 rounded-lg bg-black/30 border border-white/5">
-                  <p className="text-sm text-zinc-300">
-                    {analysis.analysis.performance_score.feedback}
-                  </p>
-                </div>
-              </div>
-            )}
-            {analysis && analysis.status !== "processed" && (
-              <div className="rounded-2xl p-8 bg-zinc-900 border border-white/5 flex items-center justify-center min-h-[300px]">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-zinc-400 text-sm">
-                    Video is still being processed...
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Bottom Row: Rhythm & Timing + Chord Detection */}
-        {analysis?.status === "processed" && analysis.analysis && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Rhythm Analysis Card */}
             <div className="rounded-2xl p-6 bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/5">
               <div className="flex items-center gap-2 mb-5">
@@ -313,8 +337,10 @@ export default function VideoDetailPage() {
                 </div>
               </div>
             </div>
-          </div>
-        )}
+
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

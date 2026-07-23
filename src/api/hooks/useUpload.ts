@@ -9,10 +9,6 @@ import { useQueryClient } from "@tanstack/react-query";
 interface UploadParams {
   file: File;
   url: string;
-  metadata?: {
-    title: string;
-    description: string;
-  };
 }
 
 export const usePresignedUrl = () => {

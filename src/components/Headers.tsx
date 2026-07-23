@@ -90,6 +90,8 @@ export default function Header() {
       const presigned = await getUrl({
         videoName: selectedFile.name,
         thumbnailName: thumbnailFile?.name,
+        title: title.trim(),
+        description: description.trim(),
       });
 
       const uploads = [

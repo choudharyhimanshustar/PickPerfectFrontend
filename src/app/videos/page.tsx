@@ -127,9 +127,14 @@ export default function Home() {
                 </div>
               )}
             </div>
-            <span className="text-sm mt-3 font-medium text-gray-700 truncate w-full">
-              {video.filename}
+            <span className="text-sm mt-3 font-medium text-gray-800 truncate w-full">
+              {video.title || video.filename}
             </span>
+            {video.description && (
+              <p className="text-xs mt-1 text-gray-500 line-clamp-2 w-full">
+                {video.description}
+              </p>
+            )}
           </div>
         ))}
       </div>
