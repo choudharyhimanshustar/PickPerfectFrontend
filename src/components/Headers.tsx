@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { IoIosSearch } from "react-icons/io";
@@ -50,6 +50,31 @@ export default function Header() {
   const { toast } = useToast();
   const dialogRef = useRef<HTMLDivElement>(null);
   const dialogContentRef = useRef<HTMLDivElement>(null);
+
+  // Blob URLs are minted once per file. Building them inline during render
+  // would hand the <video>/<img> a brand-new src on every keystroke in the
+  // title/description fields, which makes the preview reload and flicker.
+  const videoPreviewUrl = useMemo(
+    () => (selectedFile ? URL.createObjectURL(selectedFile) : null),
+    [selectedFile],
+  );
+  const thumbnailPreviewUrl = useMemo(
+    () => (thumbnailFile ? URL.createObjectURL(thumbnailFile) : null),
+    [thumbnailFile],
+  );
+
+  useEffect(
+    () => () => {
+      if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
+    },
+    [videoPreviewUrl],
+  );
+  useEffect(
+    () => () => {
+      if (thumbnailPreviewUrl) URL.revokeObjectURL(thumbnailPreviewUrl);
+    },
+    [thumbnailPreviewUrl],
+  );
 
   // useeffect
   useEffect(() => {
@@ -273,7 +298,7 @@ export default function Header() {
                     ) : (
                       <div className="relative w-full h-full rounded-lg overflow-hidden">
                         <video
-                          src={URL.createObjectURL(selectedFile)}
+                          src={videoPreviewUrl ?? undefined}
                           controls
                           className="w-full h-full object-contain"
                         />
@@ -309,7 +334,7 @@ export default function Header() {
                     ) : (
                       <div className="relative w-full h-full rounded-lg overflow-hidden">
                         <img
-                          src={URL.createObjectURL(thumbnailFile)}
+                          src={thumbnailPreviewUrl ?? undefined}
                           className="w-full h-full object-cover"
                         />
                         <Button

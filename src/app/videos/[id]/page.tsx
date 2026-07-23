@@ -70,6 +70,13 @@ export default function VideoDetailPage() {
 
   const video = videos?.find((v: VideoItem) => v.video_id === id);
 
+  // Go back to wherever the user came from; fall back to the grid when this
+  // page was opened directly (no history to pop).
+  const goBack = () => {
+    if (window.history.length > 1) router.back();
+    else router.push("/videos");
+  };
+
   const [descExpanded, setDescExpanded] = React.useState(false);
   const description = video?.description?.trim();
   const isLongDescription = (description?.length ?? 0) > 180;
@@ -78,11 +85,11 @@ export default function VideoDetailPage() {
     <div className="min-h-screen p-4 text-white">
       {/* Back button */}
       <button
-        onClick={() => router.push("/videos")}
+        onClick={goBack}
         className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors mb-6 cursor-pointer"
       >
         <IoArrowBack className="text-lg" />
-        <span className="text-sm">Back to videos</span>
+        <span className="text-sm">Back</span>
       </button>
 
       <div className="w-full space-y-8">

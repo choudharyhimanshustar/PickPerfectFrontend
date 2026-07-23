@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Copy, Check, LogOut, Loader2 } from "lucide-react";
+import { IoArrowBack } from "react-icons/io5";
 import { useMe, useLogout } from "@/api/hooks/useAuth";
 import { useAllVideos } from "@/api/hooks/getVideos";
 import { useToast } from "@/components/ui/use-toast";
@@ -135,6 +136,13 @@ export default function ProfilePage() {
     if (!isLoading && !me?.authenticated) router.replace("/");
   }, [isLoading, me, router]);
 
+  // Go back to wherever the user came from; fall back to the grid when this
+  // page was opened directly (no history to pop).
+  const goBack = () => {
+    if (window.history.length > 1) router.back();
+    else router.push("/videos");
+  };
+
   const handleLogout = async () => {
     try {
       await logoutMutation.mutateAsync();
@@ -178,11 +186,20 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div className="w-full px-4 py-8">
+    <div className="w-full p-4">
+      {/* Back button */}
+      <button
+        onClick={goBack}
+        className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors mb-6 cursor-pointer"
+      >
+        <IoArrowBack className="text-lg" />
+        <span className="text-sm">Back</span>
+      </button>
+
       {/* Header */}
       <div className="mb-8 border-b border-white/10 pb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-white">
-          Settings
+          Profile
         </h1>
         <p className="mt-1 text-sm text-zinc-500">
           Manage your account details and review your activity.
@@ -193,7 +210,7 @@ export default function ProfilePage() {
           {/* Profile */}
           <SectionCard
             id="profile"
-            title="Profile"
+            title="Identity"
             description="Your public identity within PickPerfect."
           >
             <div className="flex items-center gap-5">
